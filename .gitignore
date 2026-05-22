@@ -1,0 +1,80 @@
+# IntelliJ IDEA / JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.intellijPlatform/
+
+# Gradle
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Maven (por si se combina)
+target/
+
+# Java / Kotlin
+*.class
+*.log
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# Kotlin
+.kotlin/
+
+# Compiler output / binarios nativos
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+dist/
+bin/
+
+# ANTLR generated (si se generan a build/, ya está cubierto; si no, descomentar)
+# generated/
+# generated-src/
+
+# Tests / coverage
+coverage/
+.nyc_output/
+jacoco.exec
+*.exec
+
+# Plugin signing / distribución (cuando se publique en Marketplace)
+*.token
+plugin-distribution/
+*.zip.asc
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores varios
+*.swp
+*.swo
+*~
+.vscode/
+.fleet/
+
+# Environment / secretos
+.env
+.env.local
+*.local
+secrets/
+
+# Logs y temporales
+*.log
+logs/
+tmp/
+temp/
