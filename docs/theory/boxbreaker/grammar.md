@@ -1,23 +1,23 @@
-# Gramática sintáctica de BoxBreaker (BBK) — propuesta tentativa
+# BoxBreaker (BBK) Syntactic Grammar — tentative proposal
 
-**Estado:** borrador. Depende de las decisiones en [`tokens.md`](tokens.md) — si alguna cambia, la gramática se ajusta.
+**Status:** draft. Depends on the decisions in [`tokens.md`](tokens.md) — if any change, the grammar adjusts.
 
-**Convenciones de notación:** las mismas que en [`../c99-grammar.md`](../c99-grammar.md):
+**Notation conventions:** the same as in [`../c99-grammar.md`](../c99-grammar.md):
 
-- `<no-terminal>` — categoría sintáctica.
-- `literal` — terminal exacto (token).
-- `a | b` — alternativa.
-- `a?` — opcional.
-- `{ a }` — repetición (0 o más).
-- `one of:` — alternativa simple entre terminales.
+- `<non-terminal>` — syntactic category.
+- `literal` — exact terminal (token).
+- `a | b` — alternative.
+- `a?` — optional.
+- `{ a }` — repetition (0 or more).
+- `one of:` — simple alternative between terminals.
 
-**Tokens referenciados:** definidos en [`tokens.md`](tokens.md). En esta gramática aparecen por su forma léxica (ej. `DCL-S`, `;`, `IDENT`).
+**Referenced tokens:** defined in [`tokens.md`](tokens.md). In this grammar they appear in their lexical form (e.g., `DCL-S`, `;`, `IDENT`).
 
 ---
 
-## 1. Translation unit (nivel top)
+## 1. Translation unit (top level)
 
-Un archivo BBK es una secuencia de declaraciones top-level, opcionalmente precedidas por una directiva de módulo.
+A BBK file is a sequence of top-level declarations, optionally preceded by a module directive.
 
 ```
 <translation-unit>
@@ -34,9 +34,9 @@ Un archivo BBK es una secuencia de declaraciones top-level, opcionalmente preced
     | <data-structure-declaration>
 ```
 
-**Notas:**
-- **Orden forzado** de declaraciones top-level (decisión cerrada): primero `CTL-OPT`, después `DCL-F`, después `DCL-C`/`DCL-S`/`DCL-DS` (libres entre sí), después `DCL-PR`, después `DCL-PROC`. Equivalente a la convención RPG (H → F → D → P).
-- Las directivas (`PRE-IF`, `PRE-INCLUDE`, etc.) pueden aparecer en cualquier punto sin romper el orden.
+**Notes:**
+- **Forced order** of top-level declarations (closed decision): first `CTL-OPT`, then `DCL-F`, then `DCL-C`/`DCL-S`/`DCL-DS` (free among themselves), then `DCL-PR`, then `DCL-PROC`. Equivalent to the RPG convention (H → F → D → P).
+- Directives (`PRE-IF`, `PRE-INCLUDE`, etc.) can appear at any point without breaking the order.
 
 ---
 
@@ -47,8 +47,8 @@ Un archivo BBK es una secuencia de declaraciones top-level, opcionalmente preced
     : CTL-OPT { <ctl-opt-keyword> }* ;
 
 <ctl-opt-keyword>
-    : IDENT                                     // ej. NOMAIN, DEBUG
-    | IDENT ( <ctl-opt-arg-list> )              // ej. DFTACTGRP(*NO)
+    : IDENT                                     // e.g. NOMAIN, DEBUG
+    | IDENT ( <ctl-opt-arg-list> )              // e.g. DFTACTGRP(*NO)
 
 <ctl-opt-arg-list>
     : <ctl-opt-arg>
@@ -57,10 +57,10 @@ Un archivo BBK es una secuencia de declaraciones top-level, opcionalmente preced
 <ctl-opt-arg>
     : IDENT
     | <literal>
-    | * IDENT                                   // figurative argument, ej. *NO, *NEW
+    | * IDENT                                   // figurative argument, e.g. *NO, *NEW
 ```
 
-Ejemplo:
+Example:
 
 ```bbk
 CTL-OPT NOMAIN DFTACTGRP(*NO) ACTGRP("BBKTEST") DEBUG;
@@ -68,9 +68,9 @@ CTL-OPT NOMAIN DFTACTGRP(*NO) ACTGRP("BBKTEST") DEBUG;
 
 ---
 
-## 3. Declaraciones de variables, constantes y tipos
+## 3. Variable, constant and type declarations
 
-### 3.1 Variable standalone (DCL-S)
+### 3.1 Standalone variable (DCL-S)
 
 ```
 <variable-declaration>
@@ -125,7 +125,7 @@ CTL-OPT NOMAIN DFTACTGRP(*NO) ACTGRP("BBKTEST") DEBUG;
     *NOPASS  *OMIT  *VARSIZE  *STRING  *NULLIND
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
 DCL-S counter INT(10);
@@ -138,7 +138,7 @@ DCL-S overlayField CHAR(20) OVERLAY(parentDS:1);
 DCL-S sameAsPrice LIKE(price);
 ```
 
-### 3.2 Constantes (DCL-C)
+### 3.2 Constants (DCL-C)
 
 ```
 <constant-declaration>
@@ -154,9 +154,9 @@ DCL-S sameAsPrice LIKE(price);
     true  false  null
 ```
 
-(En BBK eliminamos las figurative constants legacy de RPG; `true`/`false`/`null` son los únicos.)
+(In BBK we drop RPG's legacy figurative constants; `true`/`false`/`null` are the only ones.)
 
-Ejemplos:
+Examples:
 
 ```bbk
 DCL-C MAX_RETRIES 5;
@@ -189,9 +189,9 @@ DCL-C IS_ENABLED CONST(true);
     : DCL-SUBF? IDENT <type-specification> { <var-modifier> }* ;
 ```
 
-(`DCL-SUBF` es opcional; los subfields pueden declararse simplemente como `<nombre> <tipo>;`.)
+(`DCL-SUBF` is optional; subfields can be declared simply as `<name> <type>;`.)
 
-Ejemplos:
+Examples:
 
 ```bbk
 DCL-DS employee QUALIFIED {
@@ -201,7 +201,7 @@ DCL-DS employee QUALIFIED {
   salary    PACKED(9:2);
 }
 
-// Template (definición sin storage; usable con LIKEDS):
+// Template (definition with no storage; usable with LIKEDS):
 DCL-DS addressTemplate TEMPLATE {
   street CHAR(100);
   city   CHAR(50);
@@ -212,9 +212,9 @@ DCL-DS shippingAddr LIKEDS(addressTemplate);
 DCL-DS billingAddr  LIKEDS(addressTemplate);
 ```
 
-### 3.4 Prototipos (DCL-PR)
+### 3.4 Prototypes (DCL-PR)
 
-Forward declaration de un procedure.
+Forward declaration of a procedure.
 
 ```
 <prototype-declaration>
@@ -243,21 +243,21 @@ Forward declaration de un procedure.
     | OPTIONS ( <options-list> )
 ```
 
-**Notas:**
-- **Solo forma inline** (decisión cerrada). La forma con `DCL-PI` explícita interna ya no se soporta.
-- Si hay valor de retorno: `-> <type>` después de los parámetros.
-- Sin valor de retorno: omitir `-> <type>`.
+**Notes:**
+- **Inline form only** (closed decision). The form with an explicit internal `DCL-PI` is no longer supported.
+- If there is a return value: `-> <type>` after the parameters.
+- No return value: omit `-> <type>`.
 
-Ejemplos:
+Examples:
 
 ```bbk
 // Inline:
-DCL-PR sumar(a INT(10), b INT(10)) -> INT(10);
+DCL-PR sum(a INT(10), b INT(10)) -> INT(10);
 
-// Sin retorno:
-DCL-PR saludar(nombre CHAR(50));
+// No return:
+DCL-PR greet(name CHAR(50));
 
-// Llamada a programa externo:
+// Call to an external program:
 DCL-PR CUSTPROG EXTPGM("CUSTPROG") {
   custId INT(10) VALUE;
   status INT(10);
@@ -266,7 +266,7 @@ DCL-PR CUSTPROG EXTPGM("CUSTPROG") {
 
 ### 3.5 Procedures (DCL-PROC)
 
-**Solo forma inline** (decisión cerrada). `DCL-PI` como declaración separada se eliminó del lenguaje; los parámetros van en la firma de `DCL-PROC` directamente.
+**Inline form only** (closed decision). `DCL-PI` as a separate declaration was removed from the language; parameters go directly in the `DCL-PROC` signature.
 
 ```
 <procedure-declaration>
@@ -286,20 +286,20 @@ DCL-PR CUSTPROG EXTPGM("CUSTPROG") {
     | EXTPROC ( <string-literal> )
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
-DCL-PROC sumar(a INT(10), b INT(10)) -> INT(10) EXPORT {
+DCL-PROC sum(a INT(10), b INT(10)) -> INT(10) EXPORT {
   return a + b;
 }
 
-// Sin retorno, sin parámetros:
-DCL-PROC saludar {
+// No return, no parameters:
+DCL-PROC greet {
   // body
 }
 
-// Con variables locales:
-DCL-PROC procesarOrden(orderId INT(10)) -> BOOL {
+// With local variables:
+DCL-PROC processOrder(orderId INT(10)) -> BOOL {
   DCL-S total PACKED(11:2);
   DCL-S valid BOOL;
   
@@ -338,7 +338,7 @@ DCL-PROC procesarOrden(orderId INT(10)) -> BOOL {
     *INPUT  *OUTPUT  *UPDATE  *DELETE
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
 DCL-F customers DISK USAGE(*INPUT) KEYED EXTNAME("CUSTOMER");
@@ -376,12 +376,12 @@ DCL-F report   PRINTER USAGE(*OUTPUT) USROPN;
     | ;                                          // null statement
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
-procesar(orderId);              // llamada como statement
-incrementar();
-;                               // statement vacío
+process(orderId);              // call as statement
+increment();
+;                              // empty statement
 ```
 
 ### 4.2 Assignment statement
@@ -392,7 +392,7 @@ incrementar();
 
 <lvalue>
     : IDENT
-    | <lvalue> . IDENT                          // member access en DS qualified
+    | <lvalue> . IDENT                          // member access on qualified DS
     | <lvalue> [ <expression> ]                 // subscript
     | <lvalue> -> IDENT                         // pointer member access
 
@@ -400,15 +400,15 @@ incrementar();
     =  +=  -=  *=  /=  %=  &=  |=  ^=  <<=  >>=
 
 <attribute-modifier>
-    : @ IDENT                                   // ej. @halfup, @halfdown, @trunc
+    : @ IDENT                                   // e.g. @halfup, @halfdown, @trunc
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
 counter = 0;
 counter += 1;
-total = precio * iva @halfup;
+total = price * vat @halfup;
 employee.id = 100;
 nums[0] = 42;
 employees[i].salary = baseSalary;
@@ -427,7 +427,7 @@ employees[i].salary = baseSalary;
     | <statement>
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
 if (cond) {
@@ -442,10 +442,10 @@ if (cond) {
   ...
 }
 
-if (cond) doSomething();          // sin llaves, single statement
+if (cond) doSomething();          // braceless, single statement
 ```
 
-(Decisión a confirmar: ¿permitimos statements sin llaves como en C, o forzamos llaves? Forzar llaves elimina el clásico bug del `if` sin braces. Recomiendo permitir ambos por ergonomía.)
+(Decision to confirm: do we allow braceless statements as in C, or force braces? Forcing braces eliminates the classic braceless-`if` bug. I recommend allowing both for ergonomics.)
 
 ### 4.4 Select / when / other statement
 
@@ -460,23 +460,23 @@ if (cond) doSomething();          // sin llaves, single statement
     : other <block-or-statement>
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
 select {
-  when (tipo == "A") {
-    procesarA();
+  when (type == "A") {
+    processA();
   }
-  when (tipo == "B" || tipo == "C") {
-    procesarBC();
+  when (type == "B" || type == "C") {
+    processBC();
   }
   other {
-    procesarDefault();
+    processDefault();
   }
 }
 ```
 
-(`select` sin condición discriminante — el chequeo lo hace cada `when`. A diferencia de C `switch`, las expresiones de `when` no necesitan ser constantes.)
+(`select` with no discriminating condition — each `when` does the check. Unlike C's `switch`, `when` expressions don't need to be constants.)
 
 ### 4.5 While statement
 
@@ -485,7 +485,7 @@ select {
     : while ( <expression> ) <block-or-statement>
 ```
 
-Ejemplo:
+Example:
 
 ```bbk
 while (i < 10) {
@@ -501,7 +501,7 @@ while (i < 10) {
     : do <block-or-statement> while ( <expression> ) ;
 ```
 
-Ejemplo:
+Example:
 
 ```bbk
 do {
@@ -526,9 +526,9 @@ do {
     : <expression>
 ```
 
-(C99 permite declaración en el init del `for`. BBK acepta la sintaxis equivalente con `DCL-S` inline.)
+(C99 allows declaration in the `for` init. BBK accepts the equivalent syntax with an inline `DCL-S`.)
 
-Ejemplos:
+Examples:
 
 ```bbk
 for (i = 0; i < 10; i += 1) {
@@ -536,7 +536,7 @@ for (i = 0; i < 10; i += 1) {
 }
 
 for (DCL-S j INT(10) = 0; j < 100; j += 1) {
-  // j es local al for
+  // j is local to the for
 }
 ```
 
@@ -555,11 +555,11 @@ for (DCL-S j INT(10) = 0; j < 100; j += 1) {
     : { <statement-or-declaration>* }
 ```
 
-Permite mezcla libre de declaraciones y statements (al estilo C99).
+Allows free mixing of declarations and statements (C99 style).
 
 ### 4.10 Call statement
 
-Llamada a procedure como statement (sin asignar resultado).
+Procedure call as a statement (without assigning the result).
 
 ```
 <call-statement>
@@ -573,22 +573,22 @@ Llamada a procedure como statement (sin asignar resultado).
     | <argument-list> , <expression>
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
-saludar();
-saludar("mundo");
-procesarOrden(orderId, status);
+greet();
+greet("world");
+processOrder(orderId, status);
 ```
 
 ### 4.11 File operation statement
 
-Operaciones de archivo. Cada opcode es un keyword opcional al frente; la sintaxis general es función-like.
+File operations. Each opcode is an optional keyword in front; the general syntax is function-like.
 
 ```
 <file-operation-statement>
     : <file-op-keyword> <file-op-args> ;
-    | <file-op-function-call> ;                    // sintaxis alternativa función-like
+    | <file-op-function-call> ;                    // alternative function-like syntax
 
 <file-op-keyword> one of:
     read  reade  readp  readpe  chain
@@ -596,13 +596,13 @@ Operaciones de archivo. Cada opcode es un keyword opcional al frente; la sintaxi
     open  close  setll  setgt  exfmt
 
 <file-op-args>
-    : IDENT                                        // archivo
-    | <expression> IDENT                           // key + archivo
-    | IDENT IDENT                                  // archivo + DS result
-    | <expression> IDENT IDENT                     // key + archivo + DS result
+    : IDENT                                        // file
+    | <expression> IDENT                           // key + file
+    | IDENT IDENT                                  // file + result DS
+    | <expression> IDENT IDENT                     // key + file + result DS
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
 read customers;
@@ -613,9 +613,9 @@ update orders orderDS;
 setll *START customers;
 ```
 
-(Decisión a confirmar: ¿`read customers` con identificadores sin paréntesis, o `read(customers)` función-like? La forma sin paréntesis es más legible para statements simples; la función-like es más uniforme con el resto del lenguaje. Recomendaría la función-like para consistencia.)
+(Decision to confirm: `read customers` with bare identifiers and no parentheses, or `read(customers)` function-like? The no-parens form is more readable for simple statements; the function-like form is more uniform with the rest of the language. I'd recommend function-like for consistency.)
 
-### 4.12 Monitor statement (manejo de errores)
+### 4.12 Monitor statement (error handling)
 
 ```
 <monitor-statement>
@@ -631,7 +631,7 @@ setll *START customers;
     : on-exit <block-statement>
 ```
 
-Ejemplos:
+Examples:
 
 ```bbk
 monitor {
@@ -648,9 +648,9 @@ monitor {
 
 ---
 
-## 5. Expresiones
+## 5. Expressions
 
-Precedencia de menor a mayor (top-down):
+Precedence from lowest to highest (top-down):
 
 ```
 <expression>
@@ -733,12 +733,12 @@ Precedencia de menor a mayor (top-down):
     | ( <expression> )
 ```
 
-### 5.1 Tabla de precedencia (alta → baja)
+### 5.1 Precedence table (high → low)
 
-| Nivel | Operadores | Asociatividad |
+| Level | Operators | Associativity |
 |---|---|---|
 | 1 | `(...)` `[...]` `.` `->` (postfix) | left |
-| 2 | unario `+` `-` `!` `~` | right |
+| 2 | unary `+` `-` `!` `~` | right |
 | 3 | `**` | right |
 | 4 | `*` `/` `%` | left |
 | 5 | `+` `-` | left |
@@ -750,9 +750,9 @@ Precedencia de menor a mayor (top-down):
 | 11 | `\|` | left |
 | 12 | `&&` | left |
 | 13 | `\|\|` | left |
-| 14 | `?:` ternario | right |
+| 14 | `?:` ternary | right |
 
-### 5.2 Literales
+### 5.2 Literals
 
 ```
 <literal>
@@ -764,11 +764,11 @@ Precedencia de menor a mayor (top-down):
     | STR_LIT
 ```
 
-(Definición léxica detallada en [`tokens.md`](tokens.md) §3.)
+(Detailed lexical definition in [`tokens.md`](tokens.md) §3.)
 
-### 5.3 Constructores de fecha/hora/timestamp
+### 5.3 Date/time/timestamp constructors
 
-Se construyen como llamadas a función — no son literales propios:
+These are built as function calls — they are not their own literals:
 
 ```bbk
 DCL-S d DATE;
@@ -782,9 +782,9 @@ ts = timestamp("2026-05-22T14:30:00.000000");
 
 ---
 
-## 6. Directivas
+## 6. Directives
 
-Procesadas por una fase de pre-procesamiento antes del parsing principal. Sintaxis similar al preprocesador C pero con el formato `/KEYWORD` de RPG.
+Processed by a preprocessing phase before main parsing. Syntax similar to the C preprocessor, but using the RPG `/KEYWORD` style.
 
 ```
 <directive>
@@ -818,7 +818,7 @@ Procesadas por una fase de pre-procesamiento antes del parsing principal. Sintax
     | <constant-expression>
 ```
 
-Ejemplo:
+Example:
 
 ```bbk
 PRE-IF DEFINED(DEBUG)
@@ -841,7 +841,7 @@ PRE-ENDIF
     : PRE-UNDEFINE IDENT
 ```
 
-BBK acepta ambos modos: flag simple (`PRE-DEFINE DEBUG`) o con texto de reemplazo (`PRE-DEFINE MAX_RETRIES 5`). El procesador reemplaza ocurrencias del símbolo por el texto en el resto del archivo.
+BBK accepts both modes: simple flag (`PRE-DEFINE DEBUG`) or with replacement text (`PRE-DEFINE MAX_RETRIES 5`). The processor replaces occurrences of the symbol with the text throughout the rest of the file.
 
 ### 6.3 Include
 
@@ -851,9 +851,9 @@ BBK acepta ambos modos: flag simple (`PRE-DEFINE DEBUG`) o con texto de reemplaz
     | PRE-INCLUDE IDENT
 ```
 
-Unificada — no hay distinción entre `/COPY` y `/INCLUDE`. Una sola directiva con semántica "incluir un archivo fuente en este punto".
+Unified — there's no distinction between `/COPY` and `/INCLUDE`. One directive with the semantics "include a source file at this point".
 
-Ejemplo:
+Example:
 
 ```bbk
 PRE-INCLUDE "common-types.bbki"
@@ -867,13 +867,13 @@ PRE-INCLUDE "db-prototypes.bbki"
     : PRE-EOF
 ```
 
-Marca fin del fuente prematuro; lo que sigue en el archivo se ignora.
+Marks a premature end of source; what follows in the file is ignored.
 
 ---
 
 ## 7. Attribute modifiers
 
-Tokens introducidos por `@`. Listado cerrado en V1; pueden extenderse en versiones futuras.
+Tokens introduced with `@`. Closed list in V1; may be extended in future versions.
 
 ```
 <attribute-modifier>
@@ -883,72 +883,72 @@ Tokens introducidos por `@`. Listado cerrado en V1; pueden extenderse en version
     halfup    halfdown    trunc
 ```
 
-**Contextos donde aplica:**
+**Contexts where it applies:**
 
-- Statement de asignación: modifica el redondeo del valor asignado.
-- Posibles extensiones: cuerpo de procedure (`@inline`?), tipo de variable (`@volatile`?). Por ahora solo asignación.
+- Assignment statement: modifies the rounding of the assigned value.
+- Possible extensions: procedure body (`@inline`?), variable type (`@volatile`?). For now, assignment only.
 
-Ejemplo:
+Example:
 
 ```bbk
-DCL-S total   PACKED(11:2);
-DCL-S precio  PACKED(9:2);
-DCL-S cantidad INT(10);
+DCL-S total    PACKED(11:2);
+DCL-S price    PACKED(9:2);
+DCL-S quantity INT(10);
 
-total = precio / cantidad @halfup;     // redondeo half-up
-total = precio / cantidad @trunc;      // truncar (default)
+total = price / quantity @halfup;     // half-up rounding
+total = price / quantity @trunc;      // truncate (default)
 ```
 
 ---
 
-## 8. Reglas semánticas — síntesis
+## 8. Semantic rules — synthesis
 
-(Como con [`../c99-grammar.md`](../c99-grammar.md) §4, las reglas semánticas no son BNFeables. Se documentarán en `semantics.md` cuando se escriba.)
+(As with [`../c99-grammar.md`](../c99-grammar.md) §4, semantic rules cannot be put in BNF. They will be documented in `semantics.md` when written.)
 
-Por ahora, los puntos críticos pendientes de definir formalmente:
+For now, the critical points still pending formal definition:
 
-- **Sistema de tipos.** Reglas de promoción entre tipos numéricos (INT ↔ PACKED ↔ FLOAT). Compatibilidad asignación CHAR ↔ VARCHAR. Conversiones implícitas vs explícitas.
-- **Scope rules.** Variables module-level vs procedure-local. Visibility con EXPORT/IMPORT.
-- **Storage durations.** STATIC, automatic, basado (BASED).
-- **Initialization defaults.** ¿BBK auto-inicializa o exige `INZ` explícito? (Decisión ya tomada en [`../mapping/translatable.md`](../../mapping/translatable.md): siempre explícito.)
-- **Sequence points.** Cuándo se garantizan efectos colaterales.
-- **Aritmética decimal.** Reglas de precisión y redondeo en operaciones entre PACKED/ZONED de distinta escala.
-- **Punteros y aliasing.** Qué se permite con BASED, OVERLAY, casts.
-- **Manejo de errores.** Semántica de monitor/on-error/on-exit. Equivalente a try/catch/finally.
-- **File ops.** Estado de cursor tras read/chain/setll. Comportamiento de write/update tras error.
+- **Type system.** Promotion rules between numeric types (INT ↔ PACKED ↔ FLOAT). Assignment compatibility CHAR ↔ VARCHAR. Implicit vs explicit conversions.
+- **Scope rules.** Module-level vs procedure-local variables. Visibility with EXPORT/IMPORT.
+- **Storage durations.** STATIC, automatic, based (BASED).
+- **Initialization defaults.** Does BBK auto-initialize, or does it require explicit `INZ`? (Decision already made in [`../mapping/translatable.md`](../../mapping/translatable.md): always explicit.)
+- **Sequence points.** When side effects are guaranteed.
+- **Decimal arithmetic.** Precision and rounding rules in operations between PACKED/ZONED of different scales.
+- **Pointers and aliasing.** What's allowed with BASED, OVERLAY, casts.
+- **Error handling.** monitor/on-error/on-exit semantics. Equivalent to try/catch/finally.
+- **File ops.** Cursor state after read/chain/setll. write/update behavior after error.
 
 ---
 
-## 9. Decisiones abiertas (specifics de la gramática)
+## 9. Open decisions (grammar specifics)
 
-Items donde la gramática propuesta es una elección pero hay alternativas:
+Items where the proposed grammar is a choice but alternatives exist:
 
-| # | Decisión | Resolución |
+| # | Decision | Resolution |
 |---|---|---|
-| 1 | Ordenamiento de top-level declarations | **Orden forzado** CTL-OPT → DCL-F → (DCL-C/S/DS) → DCL-PR → DCL-PROC. Las directivas pueden ir en cualquier punto. |
-| 2 | Procedure inline vs explícita | **Solo inline.** `DCL-PI` separado se elimina del lenguaje. |
-| 3 | Subfield de DS con DCL-SUBF | **Opcional.** Ambas formas (con y sin `DCL-SUBF`) son válidas. |
-| 4 | Llaves obligatorias en bloques | **Sí, llaves obligatorias** en `if`, `else`, `while`, `do/while`, `for`, `select`/`when`/`other`, `monitor`/`on-error`/`on-exit`. Sin single-statement sin llaves. |
-| 5 | File operations sintaxis | **Keyword style** (`read customers customerDS;`), no función-like. |
-| 6 | `PRE-DEFINE` con replacement text | **Estilo C** — admite `PRE-DEFINE NAME` (flag) y `PRE-DEFINE NAME value` (con texto de reemplazo). |
-| 7 | `/INCLUDE` y `/COPY` | **Unificados** en `PRE-INCLUDE`. |
-| 8 | Multi-dim arrays | **`arr[i, j]`** (comma-separated indices en un solo `[]`), no chained `[i][j]`. |
-| 9 | Lvalue puede contener call result | **Sí.** `f().field = x` y similares son sintácticamente válidos. La semántica (función debe retornar referencia/lvalue) se valida en el type checker. |
-| 10 | `LIKE(expression)` | **Solo IDENT** — `LIKE(otherVar)` válido; `LIKE(f())` o `LIKE(arr[i])` no. |
-| 11 | Declaración inline en `for` | **Sí soportado** — `for (DCL-S i INT(10) = 0; i < 10; i += 1) { ... }`. |
-| 12 | Sintaxis de attribute modifier | **`@`** — `@halfup`, `@halfdown`, `@trunc`. Lista cerrada. |
+| 1 | Top-level declaration ordering | **Forced order** CTL-OPT → DCL-F → (DCL-C/S/DS) → DCL-PR → DCL-PROC. Directives may go anywhere. |
+| 2 | Procedure inline vs explicit | **Inline only.** Separate `DCL-PI` is removed from the language. |
+| 3 | DS subfield with DCL-SUBF | **Optional.** Both forms (with and without `DCL-SUBF`) are valid. |
+| 4 | Mandatory braces in blocks | **Yes, braces required** in `if`, `else`, `while`, `do/while`, `for`, `select`/`when`/`other`, `monitor`/`on-error`/`on-exit`. No braceless single-statements. |
+| 5 | File operations syntax | **Keyword style** (`read customers customerDS;`), not function-like. |
+| 6 | `PRE-DEFINE` with replacement text | **C style** — accepts `PRE-DEFINE NAME` (flag) and `PRE-DEFINE NAME value` (with replacement text). |
+| 7 | `/INCLUDE` and `/COPY` | **Unified** in `PRE-INCLUDE`. |
+| 8 | Multi-dim arrays | **`arr[i, j]`** (comma-separated indices in a single `[]`), not chained `[i][j]`. |
+| 9 | Lvalue can contain call result | **Yes.** `f().field = x` and similar are syntactically valid. The semantics (function must return a reference/lvalue) is validated in the type checker. |
+| 10 | `LIKE(expression)` | **IDENT only** — `LIKE(otherVar)` valid; `LIKE(f())` or `LIKE(arr[i])` not. |
+| 11 | Inline declaration in `for` | **Supported** — `for (DCL-S i INT(10) = 0; i < 10; i += 1) { ... }`. |
+| 12 | Attribute modifier syntax | **`@`** — `@halfup`, `@halfdown`, `@trunc`. Closed list. |
 
-**Las 12 decisiones de gramática están cerradas.** Quedan por hacer:
-- Reflejar en las producciones BNF los cambios de #4 (forzar llaves), #8 (subscript con comma), #9 (lvalue con calls) — son ediciones puntuales pendientes en este archivo.
-- Definir reglas semánticas formales en `semantics.md` (sistema de tipos, conversiones, sequence points, etc.).
+**The 12 grammar decisions are closed.** Still to do:
+- Reflect in the BNF productions the changes from #4 (force braces), #8 (subscript with comma), #9 (lvalue with calls) — these are pending edits in this file.
+- Define formal semantic rules in `semantics.md` (type system, conversions, sequence points, etc.).
 
 ---
 
-## 10. Documentos relacionados
+## 10. Related documents
 
-- [`tokens.md`](tokens.md) — léxico (tokens individuales)
-- [`../c99-grammar.md`](../c99-grammar.md) — gramática de C99 (target del lowering)
-- [`../rpgle-grammar.md`](../rpgle-grammar.md) — gramática de RPG (source del frontend)
-- [`../../mapping/similarities.md`](../../mapping/similarities.md) — qué mapea directo RPG ↔ C
-- [`../../mapping/translatable.md`](../../mapping/translatable.md) — qué necesita traducción con runtime
-- [`../../mapping/runtime-required.md`](../../mapping/runtime-required.md) — qué no se resuelve solo traduciendo
+- [`tokens.md`](tokens.md) — lexicon (individual tokens)
+- [`../c99-grammar.md`](../c99-grammar.md) — C99 grammar (lowering target)
+- [`../rpgle-grammar.md`](../rpgle-grammar.md) — RPG grammar (frontend source)
+- [`../../mapping/similarities.md`](../../mapping/similarities.md) — what maps directly RPG ↔ C
+- [`../../mapping/translatable.md`](../../mapping/translatable.md) — what needs translation with runtime
+- [`../../mapping/runtime-required.md`](../../mapping/runtime-required.md) — what can't be solved by translation alone

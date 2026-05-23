@@ -1,0 +1,144 @@
+<templateSet group="BBK">
+
+    <!-- ===== Top-level declarations ===== -->
+
+    <template name="dcls" value="DCL-S $NAME$ $TYPE$;$END$"
+              description="Declare standalone variable"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="NAME" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true"/>
+        <variable name="TYPE" expression="" defaultValue="&quot;INT(10)&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_TOPLEVEL" value="true"/>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="dclc" value="DCL-C $NAME$ $VALUE$;$END$"
+              description="Declare named constant"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="NAME" expression="" defaultValue="&quot;NAME&quot;" alwaysStopAt="true"/>
+        <variable name="VALUE" expression="" defaultValue="&quot;0&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_TOPLEVEL" value="true"/>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="dclds" value="DCL-DS $NAME$ QUALIFIED {&#10;  $END$&#10;}"
+              description="Declare data structure"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="NAME" expression="" defaultValue="&quot;myDs&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_TOPLEVEL" value="true"/>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="dclf" value="DCL-F $NAME$ DISK USAGE(*INPUT) KEYED;$END$"
+              description="Declare file"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="NAME" expression="" defaultValue="&quot;myFile&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_TOPLEVEL" value="true"/>
+        </context>
+    </template>
+
+    <template name="dclpr" value="DCL-PR $NAME$($PARAMS$) -> $RET$;$END$"
+              description="Declare prototype"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="NAME"   expression="" defaultValue="&quot;procName&quot;" alwaysStopAt="true"/>
+        <variable name="PARAMS" expression="" defaultValue="&quot;a INT(10) VALUE&quot;" alwaysStopAt="true"/>
+        <variable name="RET"    expression="" defaultValue="&quot;INT(10)&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_TOPLEVEL" value="true"/>
+        </context>
+    </template>
+
+    <template name="proc" value="DCL-PROC $NAME$($PARAMS$) -> $RET$ {&#10;  $END$&#10;}"
+              description="Declare procedure"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="NAME"   expression="" defaultValue="&quot;procName&quot;" alwaysStopAt="true"/>
+        <variable name="PARAMS" expression="" defaultValue="&quot;a INT(10) VALUE&quot;" alwaysStopAt="true"/>
+        <variable name="RET"    expression="" defaultValue="&quot;INT(10)&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_TOPLEVEL" value="true"/>
+        </context>
+    </template>
+
+    <template name="ctlopt" value="CTL-OPT $OPTS$;$END$"
+              description="Module-level CTL-OPT directive"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="OPTS" expression="" defaultValue="&quot;MAIN(mainProc) DFTACTGRP(*NO)&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_TOPLEVEL" value="true"/>
+        </context>
+    </template>
+
+    <!-- ===== Control-flow blocks (procedure body) ===== -->
+
+    <template name="ifb" value="if ($COND$) {&#10;  $END$&#10;}"
+              description="if block"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="COND" expression="" defaultValue="&quot;cond&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="whileb" value="while ($COND$) {&#10;  $END$&#10;}"
+              description="while block"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="COND" expression="" defaultValue="&quot;cond&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="dowb" value="do {&#10;  $END$&#10;} while ($COND$);"
+              description="do/while block"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="COND" expression="" defaultValue="&quot;cond&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="forb" value="for ($INIT$; $COND$; $UPD$) {&#10;  $END$&#10;}"
+              description="for block"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="INIT" expression="" defaultValue="&quot;i = 0&quot;" alwaysStopAt="true"/>
+        <variable name="COND" expression="" defaultValue="&quot;i &lt; 10&quot;" alwaysStopAt="true"/>
+        <variable name="UPD"  expression="" defaultValue="&quot;i += 1&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="selectb" value="select {&#10;  when ($COND$) {&#10;    $END$&#10;  }&#10;  other {&#10;  }&#10;}"
+              description="select/when/other block"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="COND" expression="" defaultValue="&quot;cond&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="monitorb" value="monitor {&#10;  $END$&#10;} on-error {&#10;}"
+              description="monitor block"
+              toReformat="false" toShortenFQNames="false">
+        <context>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+    <template name="preif" value="PRE-IF $COND$&#10;  $END$&#10;PRE-ENDIF"
+              description="PRE-IF / PRE-ENDIF directive block"
+              toReformat="false" toShortenFQNames="false">
+        <variable name="COND" expression="" defaultValue="&quot;DEFINED(FLAG)&quot;" alwaysStopAt="true"/>
+        <context>
+            <option name="BBK_TOPLEVEL" value="true"/>
+            <option name="BBK_PROC_BODY" value="true"/>
+        </context>
+    </template>
+
+</templateSet>

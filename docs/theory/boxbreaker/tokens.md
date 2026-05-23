@@ -1,34 +1,34 @@
-# Tokens de BoxBreaker (BBK) — propuesta tentativa
+# BoxBreaker (BBK) Tokens — tentative proposal
 
-**Estado:** borrador. Las decisiones acá son punto de partida; varias quedan abiertas explícitamente al final del documento.
+**Status:** draft. The decisions here are a starting point; several are explicitly left open at the end of the document.
 
-**Principio de diseño detrás de las elecciones:** vocabulario semántico de RPG (cuando es más rico que C), sintaxis pragmática de C (cuando es más limpia), nada de la deuda histórica de ninguno de los dos. Ver [`../../mapping/similarities.md`](../../mapping/similarities.md) y [`../../mapping/translatable.md`](../../mapping/translatable.md) para el razonamiento item por item.
+**Design principle behind the choices:** semantic vocabulary from RPG (when it's richer than C), pragmatic syntax from C (when it's cleaner), none of the historical baggage from either. See [`../../mapping/similarities.md`](../../mapping/similarities.md) and [`../../mapping/translatable.md`](../../mapping/translatable.md) for item-by-item reasoning.
 
-**Reglas globales que afectan al léxico:**
+**Global rules that affect lexing:**
 
-- BBK es **siempre free-form**. No hay modo column-based.
-- Statements terminan en `;`.
-- Bloques delimitados con `{` y `}` (estilo C). Esto elimina las keywords `END-IF`, `ENDIF`, `ENDFOR`, `ENDDO`, `ENDSL`, `END-DS`, `END-PR`, `END-PI`, `END-PROC` del léxico — los `}` los reemplazan.
-- **Case sensitivity:** **case-insensitive** en todo (keywords e identificadores), igual que RPG. `dcl-s`, `DCL-S`, `Dcl-S` son el mismo token; `myVar`, `MYVAR`, `MyVar` referencian la misma variable. El frontend normaliza a una forma canónica (a definir: lowercase) antes de emitir C (que sí es case-sensitive).
-- Sin `%` prefix para BIFs: en BBK son funciones normales (`trim`, `substr`, etc.).
-- Sin figurative constants RPG (`*ON`, `*OFF`, `*NULL`, `*ZERO`, `*BLANK`): se reemplazan por literales C (`true`, `false`, `null`, `0`, `" "`). El frontend traduce.
-- Sin indicators globales (`*IN01`-`*IN99`): el frontend traduce a booleanos nombrados.
+- BBK is **always free-form**. No column-based mode.
+- Statements end in `;`.
+- Blocks are delimited with `{` and `}` (C style). This eliminates the `END-IF`, `ENDIF`, `ENDFOR`, `ENDDO`, `ENDSL`, `END-DS`, `END-PR`, `END-PI`, `END-PROC` keywords from the lexicon — `}` replaces them.
+- **Case sensitivity:** **case-insensitive** everywhere (keywords and identifiers), same as RPG. `dcl-s`, `DCL-S`, `Dcl-S` are the same token; `myVar`, `MYVAR`, `MyVar` reference the same variable. The frontend normalizes to a canonical form (TBD: lowercase) before emitting C (which is case-sensitive).
+- No `%` prefix for BIFs: in BBK they are regular functions (`trim`, `substr`, etc.).
+- No RPG figurative constants (`*ON`, `*OFF`, `*NULL`, `*ZERO`, `*BLANK`): replaced by C literals (`true`, `false`, `null`, `0`, `" "`). The frontend translates.
+- No global indicators (`*IN01`-`*IN99`): the frontend translates them into named booleans.
 
 ---
 
-## 1. Whitespace y comentarios
+## 1. Whitespace and comments
 
-Descartados por el lexer.
+Discarded by the lexer.
 
-| Token | Descripción |
+| Token | Description |
 |---|---|
-| `WHITESPACE` | espacios, tabs, newlines — separa tokens |
-| `LINE_COMMENT` | `//` hasta fin de línea |
-| `BLOCK_COMMENT` | `/* ... */` multilinea, no anidados |
+| `WHITESPACE` | spaces, tabs, newlines — separates tokens |
+| `LINE_COMMENT` | `//` to end of line |
+| `BLOCK_COMMENT` | `/* ... */` multiline, not nested |
 
 ---
 
-## 2. Identificadores
+## 2. Identifiers
 
 ```
 <identifier>  ::=  <letter> { <letter> | <digit> | _ }*
@@ -36,46 +36,46 @@ Descartados por el lexer.
 <digit>       ::=  0..9
 ```
 
-Sin caracteres especiales tipo `#`, `$`, `@` (compatibilidad EBCDIC de RPG, no relevante para BBK).
+No special characters like `#`, `$`, `@` (those are RPG EBCDIC compatibility, not relevant for BBK).
 
 **Token:** `IDENT`
 
 ---
 
-## 3. Literales
+## 3. Literals
 
-### 3.1 Numéricos
+### 3.1 Numeric
 
-| Token | Forma | Ejemplos |
+| Token | Form | Examples |
 |---|---|---|
 | `INT_LIT` | decimal: `[0-9]+` | `0`, `42`, `100` |
 | `INT_LIT_HEX` | `0x[0-9A-Fa-f]+` | `0xFF`, `0x1A2B` |
 | `INT_LIT_OCT` | `0o[0-7]+` | `0o755` |
 | `FLOAT_LIT` | `[0-9]+ . [0-9]+ ( e [+-]? [0-9]+ )?` | `3.14`, `1.5e10`, `2.0e-3` |
-| `DEC_LIT` | `[0-9]+ . [0-9]+ d?` (sufijo `d` opcional) | `19.95d`, `0.01`, `19.95` |
+| `DEC_LIT` | `[0-9]+ . [0-9]+ d?` (optional `d` suffix) | `19.95d`, `0.01`, `19.95` |
 
-(`DEC_LIT` distingue literales decimales exactos de floats binarios. **Sin sufijo**, el tipo se infiere por el contexto: si el destino es `PACKED`/`ZONED`/`BINDEC` se trata como decimal exacto; si el destino es `FLOAT` o el contexto es ambiguo, se trata como float binario. **Con sufijo `d`**, siempre se trata como decimal exacto. El sufijo es estilo Java/C# decimal literals para resolver ambigüedad cuando hace falta.)
+(`DEC_LIT` distinguishes exact decimal literals from binary floats. **Without the suffix**, the type is inferred from context: if the target is `PACKED`/`ZONED`/`BINDEC` it's treated as an exact decimal; if the target is `FLOAT` or the context is ambiguous, it's treated as a binary float. **With the `d` suffix**, it's always treated as an exact decimal. The suffix follows the Java/C# decimal literal style to disambiguate when needed.)
 
 ### 3.2 Strings
 
-| Token | Forma | Ejemplos |
+| Token | Form | Examples |
 |---|---|---|
-| `STR_LIT_DOUBLE` | `"..."` con escapes `\n`, `\t`, `\\`, `\"`, `\xNN`, `\uNNNN` | `"hola"`, `"linea\n"` |
-| `STR_LIT_SINGLE` | `'...'` con escapes `\n`, `\t`, `\\`, `\'`, `\xNN`, `\uNNNN` | `'hola'`, `'it\'s'` |
+| `STR_LIT_DOUBLE` | `"..."` with escapes `\n`, `\t`, `\\`, `\"`, `\xNN`, `\uNNNN` | `"hello"`, `"line\n"` |
+| `STR_LIT_SINGLE` | `'...'` with escapes `\n`, `\t`, `\\`, `\'`, `\xNN`, `\uNNNN` | `'hello'`, `'it\'s'` |
 
-Ambas formas son equivalentes semánticamente — son el mismo tipo de string. Coexisten para que código portado desde RPG (que usa `'...'`) no necesite reescribir comillas, y código nuevo o portado desde C (que típicamente usa `"..."`) tampoco. El lexer emite ambos como `STR_LIT` para el parser; la distinción doble/simple no llega al AST.
+Both forms are semantically equivalent — they are the same string type. They coexist so that code ported from RPG (which uses `'...'`) doesn't need to rewrite quotes, and so that new code or code ported from C (which typically uses `"..."`) doesn't either. The lexer emits both as `STR_LIT` for the parser; the double/single distinction does not reach the AST.
 
-### 3.3 Booleanos y null
+### 3.3 Booleans and null
 
-| Token | Forma |
+| Token | Form |
 |---|---|
 | `TRUE` | `true` |
 | `FALSE` | `false` |
 | `NULL` | `null` |
 
-### 3.4 Fechas/horas/timestamps
+### 3.4 Dates/times/timestamps
 
-**No tienen literal propio.** Se construyen con funciones:
+**No dedicated literal.** Built with functions:
 
 ```
 date("2026-05-22")
@@ -83,45 +83,45 @@ time("14:30:00")
 timestamp("2026-05-22T14:30:00.000000")
 ```
 
-(Decisión a confirmar: alternativa sería literales prefijados estilo SQL `DATE '2026-05-22'`. La forma funcional es más uniforme.)
+(Decision to be confirmed: the alternative would be SQL-style prefixed literals `DATE '2026-05-22'`. The functional form is more uniform.)
 
 ---
 
 ## 4. Punctuators
 
-| Token | Símbolo | Uso |
+| Token | Symbol | Use |
 |---|---|---|
-| `SEMI` | `;` | fin de statement |
-| `COMMA` | `,` | separador de argumentos, fields, etc. |
-| `DOT` | `.` | acceso a miembro de DS qualified |
-| `ARROW` | `->` | acceso a miembro vía puntero, **y** tipo de retorno de procedure |
-| `LPAREN` | `(` | apertura de agrupación / lista de parámetros |
-| `RPAREN` | `)` | cierre de agrupación |
-| `LBRACE` | `{` | apertura de bloque |
-| `RBRACE` | `}` | cierre de bloque |
-| `LBRACKET` | `[` | apertura de subíndice de array |
-| `RBRACKET` | `]` | cierre de subíndice de array |
-| `COLON` | `:` | separador en `OVERLAY(parent:pos)`, `PACKED(n:d)`, atributos `@halfup` |
-| `AT` | `@` | introduce attribute modifier (ej. `@halfup`) |
+| `SEMI` | `;` | end of statement |
+| `COMMA` | `,` | separator for arguments, fields, etc. |
+| `DOT` | `.` | access to a qualified DS member |
+| `ARROW` | `->` | member access via pointer, **and** procedure return type |
+| `LPAREN` | `(` | open grouping / parameter list |
+| `RPAREN` | `)` | close grouping |
+| `LBRACE` | `{` | open block |
+| `RBRACE` | `}` | close block |
+| `LBRACKET` | `[` | open array subscript |
+| `RBRACKET` | `]` | close array subscript |
+| `COLON` | `:` | separator in `OVERLAY(parent:pos)`, `PACKED(n:d)`, `@halfup` attributes |
+| `AT` | `@` | introduces an attribute modifier (e.g. `@halfup`) |
 
 ---
 
-## 5. Operadores
+## 5. Operators
 
-### 5.1 Aritméticos
+### 5.1 Arithmetic
 
-| Token | Símbolo |
+| Token | Symbol |
 |---|---|
 | `PLUS` | `+` |
 | `MINUS` | `-` |
 | `STAR` | `*` |
 | `SLASH` | `/` |
-| `PERCENT` | `%` (módulo) |
-| `STAR_STAR` | `**` (exponenciación) |
+| `PERCENT` | `%` (modulo) |
+| `STAR_STAR` | `**` (exponentiation) |
 
-### 5.2 Comparación
+### 5.2 Comparison
 
-| Token | Símbolo |
+| Token | Symbol |
 |---|---|
 | `EQ_EQ` | `==` |
 | `BANG_EQ` | `!=` |
@@ -130,9 +130,9 @@ timestamp("2026-05-22T14:30:00.000000")
 | `LT_EQ` | `<=` |
 | `GT_EQ` | `>=` |
 
-### 5.3 Lógicos
+### 5.3 Logical
 
-| Token | Símbolo |
+| Token | Symbol |
 |---|---|
 | `AMP_AMP` | `&&` |
 | `PIPE_PIPE` | `\|\|` |
@@ -140,7 +140,7 @@ timestamp("2026-05-22T14:30:00.000000")
 
 ### 5.4 Bitwise
 
-| Token | Símbolo |
+| Token | Symbol |
 |---|---|
 | `AMP` | `&` |
 | `PIPE` | `\|` |
@@ -149,9 +149,9 @@ timestamp("2026-05-22T14:30:00.000000")
 | `LT_LT` | `<<` |
 | `GT_GT` | `>>` |
 
-### 5.5 Asignación
+### 5.5 Assignment
 
-| Token | Símbolo |
+| Token | Symbol |
 |---|---|
 | `EQ` | `=` |
 | `PLUS_EQ` | `+=` |
@@ -165,21 +165,21 @@ timestamp("2026-05-22T14:30:00.000000")
 | `LT_LT_EQ` | `<<=` |
 | `GT_GT_EQ` | `>>=` |
 
-### 5.6 Ternario
+### 5.6 Ternary
 
-| Token | Símbolo |
+| Token | Symbol |
 |---|---|
 | `QUESTION` | `?` |
-| `COLON` | `:` (reuso del token punctuator) |
+| `COLON` | `:` (reuses the punctuator token) |
 
-**No incluidos** (decisión consciente):
+**Not included** (deliberate decision):
 
-- `++` / `--` — riesgo de sequence point issues, no aportan sobre `+= 1`.
-- `,` como operador de expresión (lo de C). Confuso, raramente útil.
+- `++` / `--` — risk of sequence point issues, no real win over `+= 1`.
+- `,` as an expression operator (C's comma). Confusing, rarely useful.
 
 ---
 
-## 6. Keywords — control de flujo (estilo C)
+## 6. Keywords — control flow (C style)
 
 | Token | Keyword |
 |---|---|
@@ -192,7 +192,7 @@ timestamp("2026-05-22T14:30:00.000000")
 | `KW_CONTINUE` | `continue` |
 | `KW_RETURN` | `return` |
 
-Forma típica:
+Typical form:
 
 ```bbk
 if (cond) {
@@ -216,16 +216,16 @@ for (i = 0; i < 10; i += 1) {
 }
 ```
 
-`DOW` y `DOU` de RPG mapean a `while` y `do...while` respectivamente.
+RPG's `DOW` and `DOU` map to `while` and `do...while` respectively.
 
 ---
 
-## 7. Keywords — control de flujo (estilo RPG retenido)
+## 7. Keywords — control flow (RPG style retained)
 
 ```bbk
 select {
-  when (tipo == "A") { ... }
-  when (tipo == "B" || tipo == "C") { ... }
+  when (type == "A") { ... }
+  when (type == "B" || type == "C") { ... }
   other { ... }
 }
 ```
@@ -236,28 +236,28 @@ select {
 | `KW_WHEN` | `when` |
 | `KW_OTHER` | `other` |
 
-(No usamos `switch`/`case` de C porque `case` exige constantes en C; `when` toma expresión booleana arbitraria. La estructura es la de RPG, los delimitadores son los de C.)
+(We don't use C's `switch`/`case` because `case` requires constants in C; `when` takes an arbitrary boolean expression. The structure is RPG's, the delimiters are C's.)
 
 ---
 
-## 8. Keywords — declaración (estilo RPG, decisión previa)
+## 8. Keywords — declaration (RPG style, prior decision)
 
-### 8.1 Tokens de declaración (cada uno propio)
+### 8.1 Declaration tokens (one each)
 
-| Token | Keyword | Uso |
+| Token | Keyword | Use |
 |---|---|---|
-| `KW_DCL_S` | `DCL-S` | variable standalone |
-| `KW_DCL_C` | `DCL-C` | constante con nombre |
+| `KW_DCL_S` | `DCL-S` | standalone variable |
+| `KW_DCL_C` | `DCL-C` | named constant |
 | `KW_DCL_DS` | `DCL-DS` | data structure |
-| `KW_DCL_PR` | `DCL-PR` | prototipo (forward declaration) |
+| `KW_DCL_PR` | `DCL-PR` | prototype (forward declaration) |
 | `KW_DCL_PROC` | `DCL-PROC` | procedure |
-| `KW_DCL_F` | `DCL-F` | declaración de archivo |
-| `KW_DCL_PARM` | `DCL-PARM` | parámetro (cuando explícito) |
-| `KW_DCL_SUBF` | `DCL-SUBF` | subfield de DS (cuando explícito) |
+| `KW_DCL_F` | `DCL-F` | file declaration |
+| `KW_DCL_PARM` | `DCL-PARM` | parameter (when explicit) |
+| `KW_DCL_SUBF` | `DCL-SUBF` | DS subfield (when explicit) |
 
-**Decisión:** los `END-*` (END-DS, END-PR, END-PI, END-PROC) **no son tokens**. Los `}` los reemplazan.
+**Decision:** the `END-*` (END-DS, END-PR, END-PI, END-PROC) **are not tokens**. `}` replaces them.
 
-### 8.2 Tipos primitivos
+### 8.2 Primitive types
 
 | Token | Keyword |
 |---|---|
@@ -276,12 +276,12 @@ select {
 | `KW_POINTER` | `POINTER` |
 | `KW_VOID` | `VOID` |
 
-**Notas:**
-- `IND` de RPG (indicator = char `'1'`/`'0'`) se reemplaza por `BOOL` (booleano real).
-- `OBJECT` (Java object de RPG) no entra; BBK no apunta a JVM.
-- Sintaxis de longitud: `CHAR(50)`, `VARCHAR(100)`, `PACKED(9:2)`, `INT(10)`, etc.
+**Notes:**
+- RPG's `IND` (indicator = char `'1'`/`'0'`) is replaced by `BOOL` (a real boolean).
+- `OBJECT` (RPG's Java object) does not enter; BBK does not target the JVM.
+- Length syntax: `CHAR(50)`, `VARCHAR(100)`, `PACKED(9:2)`, `INT(10)`, etc.
 
-### 8.3 Modifiers de declaración
+### 8.3 Declaration modifiers
 
 | Token | Keyword |
 |---|---|
@@ -307,7 +307,7 @@ select {
 | `KW_EXTPGM` | `EXTPGM` |
 | `KW_EXTPROC` | `EXTPROC` |
 
-### 8.4 Keywords específicas de `DCL-F`
+### 8.4 `DCL-F`-specific keywords
 
 | Token | Keyword |
 |---|---|
@@ -325,32 +325,32 @@ select {
 | `KW_INFDS` | `INFDS` |
 | `KW_INDDS` | `INDDS` |
 
-### 8.5 Argumentos de USAGE
+### 8.5 USAGE arguments
 
-Argumentos de `USAGE(...)` no son keywords propios sino constantes especiales:
+`USAGE(...)` arguments are not dedicated keywords but special constants:
 
-| Forma | Significado |
+| Form | Meaning |
 |---|---|
-| `*INPUT` | archivo de entrada |
-| `*OUTPUT` | salida |
-| `*UPDATE` | actualización |
-| `*DELETE` | borrado |
+| `*INPUT` | input file |
+| `*OUTPUT` | output |
+| `*UPDATE` | update |
+| `*DELETE` | delete |
 
-Se reconocen como **identificadores con prefijo `*`** vía el token genérico `STAR_IDENT`. Esto evita tener que listar un token dedicado por cada constante figurativa, y deja la puerta abierta a agregar nuevas (`*NEW`, `*CALLER`, `*ALL`, etc.) sin tocar el lexer.
+They are recognized as **identifiers with a `*` prefix** via the generic `STAR_IDENT` token. This avoids having to list a dedicated token for every figurative constant, and leaves the door open to add new ones (`*NEW`, `*CALLER`, `*ALL`, etc.) without touching the lexer.
 
 ---
 
-## 9. Directivas — cada una su token
+## 9. Directives — one token each
 
-### 9.1 Directiva de módulo
+### 9.1 Module directive
 
-| Token | Símbolo |
+| Token | Symbol |
 |---|---|
 | `KW_CTL_OPT` | `CTL-OPT` |
 
-**Sobre el prefijo de las directivas:** RPG usa `/IF`, `/INCLUDE`, etc. con `/` al frente. En BBK reemplazamos el `/` por el prefijo compound `PRE-` (consistente con `DCL-S`, `DCL-DS`, etc.). Sirve para distinguir las directivas de las keywords de control de flujo (`if`, `else`) sin necesidad de un símbolo "molesto" al frente.
+**On the directive prefix:** RPG uses `/IF`, `/INCLUDE`, etc. with `/` at the front. In BBK we replace `/` with the compound prefix `PRE-` (consistent with `DCL-S`, `DCL-DS`, etc.). It serves to distinguish directives from control-flow keywords (`if`, `else`) without needing an "annoying" symbol up front.
 
-### 9.2 Directivas de compilación condicional
+### 9.2 Conditional compilation directives
 
 | Token | Keyword |
 |---|---|
@@ -361,55 +361,55 @@ Se reconocen como **identificadores con prefijo `*`** vía el token genérico `S
 | `KW_PRE_DEFINE` | `PRE-DEFINE` |
 | `KW_PRE_UNDEFINE` | `PRE-UNDEFINE` |
 
-(`PRE-ENDIF` se mantiene porque las directivas no usan bloques `{ }` — son line-oriented como en RPG/C.)
+(`PRE-ENDIF` is kept because directives don't use `{ }` blocks — they are line-oriented as in RPG/C.)
 
-### 9.3 Directiva de inclusión
+### 9.3 Inclusion directive
 
 | Token | Keyword |
 |---|---|
 | `KW_PRE_INCLUDE` | `PRE-INCLUDE` |
 
-Unificada — `/COPY` y `/INCLUDE` de RPG colapsan en un solo token. La semántica de "incluir un archivo de fuente en este punto" es la misma.
+Unified — RPG's `/COPY` and `/INCLUDE` collapse into a single token. The semantics of "include a source file at this point" is the same.
 
-### 9.4 Directiva de fin de fuente
+### 9.4 End-of-source directive
 
 | Token | Keyword |
 |---|---|
 | `KW_PRE_EOF` | `PRE-EOF` |
 
-**Descartadas** (no aportan en un compilador moderno):
-- `/EJECT`, `/TITLE`, `/SPACE` (legacy de listing de compilador IBM)
+**Discarded** (no value in a modern compiler):
+- `/EJECT`, `/TITLE`, `/SPACE` (legacy from the IBM compiler listing)
 
 ---
 
-## 10. Attribute modifiers (sintaxis intermedia novel)
+## 10. Attribute modifiers (novel intermediate syntax)
 
-Tokens introducidos por `@` para modificar el comportamiento de una statement, sin necesidad de keywords envolventes tipo `EVAL(H)`.
+Tokens introduced with `@` to modify a statement's behavior, without needing wrapping keywords like `EVAL(H)`.
 
-| Token | Símbolo | Significado |
+| Token | Symbol | Meaning |
 |---|---|---|
-| `ATTR_HALFUP` | `@halfup` | redondeo half-up (equivalente a `EVAL(H)`) |
-| `ATTR_HALFDOWN` | `@halfdown` | redondeo half-down |
-| `ATTR_TRUNC` | `@trunc` | truncar (default; mayormente para explicitar) |
+| `ATTR_HALFUP` | `@halfup` | half-up rounding (equivalent to `EVAL(H)`) |
+| `ATTR_HALFDOWN` | `@halfdown` | half-down rounding |
+| `ATTR_TRUNC` | `@trunc` | truncate (default; mostly to be explicit) |
 
-Uso:
+Use:
 
 ```bbk
-total = precio / cantidad @halfup;
+total = price / quantity @halfup;
 ```
 
-(Decisión: lista cerrada hardcoded, o `@<ident>` libre con validación en el parser. Recomiendo lista cerrada por simplicidad inicial.)
+(Decision: hardcoded closed list, or free `@<ident>` with parser validation. I recommend a closed list for initial simplicity.)
 
 ---
 
-## 11. Resumen — categorías de tokens
+## 11. Summary — token categories
 
 ```
-Whitespace / Comments         (3)    — WHITESPACE, LINE_COMMENT, BLOCK_COMMENT (descartados por el lexer)
+Whitespace / Comments         (3)    — WHITESPACE, LINE_COMMENT, BLOCK_COMMENT (discarded by the lexer)
 Identifiers                   (2)    — IDENT, STAR_IDENT
 Literals                      (~7)   — INT_LIT, INT_LIT_HEX, INT_LIT_OCT, FLOAT_LIT, DEC_LIT, STR_LIT, TRUE, FALSE, NULL
 Punctuators                   (12)   — ; , . -> ( ) { } [ ] : @
-Operators                     (~30)  — aritméticos, comparación, lógicos, bitwise, asignación, ternario
+Operators                     (~30)  — arithmetic, comparison, logical, bitwise, assignment, ternary
 Control flow C-style          (8)    — if, else, while, do, for, break, continue, return
 Control flow RPG-style        (3)    — select, when, other
 Declaration keywords          (9)    — DCL-S, DCL-C, DCL-DS, DCL-PR, DCL-PI, DCL-PROC, DCL-F, DCL-PARM, DCL-SUBF
@@ -420,42 +420,42 @@ Module directive              (1)    — CTL-OPT
 Compilation directives        (8)    — PRE-IF, PRE-ELSEIF, PRE-ELSE, PRE-ENDIF, PRE-DEFINE, PRE-UNDEFINE, PRE-INCLUDE, PRE-EOF
 Attribute modifiers           (3)    — @halfup, @halfdown, @trunc
 
-TOTAL APROX                   ~130 tokens
+APPROX TOTAL                  ~130 tokens
 ```
 
-(Note: la línea de strings literales se compone de `STR_LIT_DOUBLE` y `STR_LIT_SINGLE`, ambos colapsando a `STR_LIT` en el AST.)
+(Note: the string literals line is made up of `STR_LIT_DOUBLE` and `STR_LIT_SINGLE`, both collapsing to `STR_LIT` in the AST.)
 
-Comparación: C99 tiene ~50 tokens, RPG IV tiene ~200+ (contando opcodes y BIFs). BBK queda en el medio, lo cual es consistente con su rol de IR intermedio.
+Comparison: C99 has ~50 tokens, RPG IV has ~200+ (counting opcodes and BIFs). BBK sits in the middle, which is consistent with its role as an intermediate IR.
 
 ---
 
-## 12. Decisiones cerradas (resueltas)
+## 12. Closed decisions (resolved)
 
-Items que en la primera versión del documento estaban abiertos, ahora resueltos:
+Items that were open in the first version of this document and have now been resolved:
 
-| # | Decisión | Resolución |
+| # | Decision | Resolution |
 |---|---|---|
-| 1 | Case-sensitivity | **Case-insensitive en todo.** Keywords e identificadores. El frontend normaliza antes de emitir C. |
-| 2 | Comentarios multilinea | **Incluidos.** `/* ... */`, no anidados. |
-| 3 | Sufijo `d` para literales decimales | **Opcional.** Sin sufijo se infiere por contexto del destino; con sufijo `d` siempre es decimal exacto. |
-| 4 | Comillas para strings | **Ambas.** `"..."` y `'...'` equivalentes. |
-| 5 | Date/time como literales o funciones | **Funciones.** `date("2026-05-22")`, no prefijos `D"..."`. |
-| 6 | `/COPY` vs `/INCLUDE` | **Unificadas** en `PRE-INCLUDE`. |
-| 7 | `*INPUT`/`*OUTPUT` tokens o identificadores con prefijo `*` | **Identificadores con prefijo `*`** (token `STAR_IDENT`). |
-| 8 | Attribute modifiers lista cerrada o abierta | **Cerrada.** Solo `@halfup`, `@halfdown`, `@trunc`. |
-| 9 | `LIKEREC` en V1 | **Sí, incluido.** |
-| 10 | Case de keywords | **No aplica** — todo case-insensitive (ver #1). |
+| 1 | Case sensitivity | **Case-insensitive everywhere.** Keywords and identifiers. The frontend normalizes before emitting C. |
+| 2 | Multiline comments | **Included.** `/* ... */`, not nested. |
+| 3 | `d` suffix for decimal literals | **Optional.** Without the suffix, the type is inferred from the target's context; with the `d` suffix it's always exact decimal. |
+| 4 | Quotes for strings | **Both.** `"..."` and `'...'` equivalent. |
+| 5 | Date/time as literals or functions | **Functions.** `date("2026-05-22")`, not `D"..."` prefixes. |
+| 6 | `/COPY` vs `/INCLUDE` | **Unified** in `PRE-INCLUDE`. |
+| 7 | `*INPUT`/`*OUTPUT` as tokens or identifiers with `*` prefix | **Identifiers with `*` prefix** (token `STAR_IDENT`). |
+| 8 | Attribute modifiers — closed or open list | **Closed.** Only `@halfup`, `@halfdown`, `@trunc`. |
+| 9 | `LIKEREC` in V1 | **Yes, included.** |
+| 10 | Keyword case | **N/A** — everything is case-insensitive (see #1). |
 
-**Cambio adicional respecto a la versión anterior:** prefijo de directivas `/X` → `PRE-X` (ver §9.1).
+**Additional change from the previous version:** directive prefix `/X` → `PRE-X` (see §9.1).
 
 ---
 
-## 13. Próximos documentos sugeridos en `boxbreaker/`
+## 13. Suggested next documents in `boxbreaker/`
 
-Una vez cerradas las decisiones abiertas:
+Once the open decisions are closed:
 
-- `lexical.md` — gramática léxica formal (regex/EBNF de cada categoría)
-- `grammar.md` — gramática sintáctica (productions)
-- `type-system.md` — sistema de tipos, conversiones, promociones
-- `semantics.md` — semántica de ejecución
-- `examples.md` — programas BBK de ejemplo, con su origen RPG y su salida C
+- `lexical.md` — formal lexical grammar (regex/EBNF for each category)
+- `grammar.md` — syntactic grammar (productions)
+- `type-system.md` — type system, conversions, promotions
+- `semantics.md` — execution semantics
+- `examples.md` — example BBK programs, with their RPG origin and C output

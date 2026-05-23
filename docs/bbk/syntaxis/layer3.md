@@ -1,33 +1,33 @@
 # BBK Grammar — Layer 3
 
-**Estado:** implementada y verificada
-**Fuente del parser:** [`plugin-bbk/src/main/grammar/BBK.bnf`](../../../plugin-bbk/src/main/grammar/BBK.bnf)
-**Pre-requisitos:** [`layer1.md`](layer1.md), [`layer2.md`](layer2.md)
-**Archivos de prueba:** [`05-procedures.bbk`](../../../tests/boxbreaker/examples/05-procedures.bbk) (válido), [`bad-12-bad-procedures.bbk`](../../../tests/boxbreaker/examples/bad/bad-12-bad-procedures.bbk) (errores intencionales)
+**Status:** implemented and verified
+**Parser source:** [`plugin-bbk/src/main/grammar/BBK.bnf`](../../../plugin-bbk/src/main/grammar/BBK.bnf)
+**Prerequisites:** [`layer1.md`](layer1.md), [`layer2.md`](layer2.md)
+**Test files:** [`05-procedures.bbk`](../../../tests/boxbreaker/examples/05-procedures.bbk) (valid), [`bad-12-bad-procedures.bbk`](../../../tests/boxbreaker/examples/bad/bad-12-bad-procedures.bbk) (intentional errors)
 
 ---
 
-## Alcance
+## Scope
 
-Layer 3 trae **procedures** al lenguaje:
+Layer 3 brings **procedures** to the language:
 
-| Construcción | Forma | Ejemplo |
+| Construct | Form | Example |
 |---|---|---|
-| `DCL-PR` | Prototipo (forward declaration) | `DCL-PR sum(a INT(10) VALUE, b INT(10) VALUE) -> INT(10);` |
-| `DCL-PROC` | Definición con body | `DCL-PROC sum(a INT(10), b INT(10)) -> INT(10) EXPORT { return a + b; }` |
+| `DCL-PR` | Prototype (forward declaration) | `DCL-PR sum(a INT(10) VALUE, b INT(10) VALUE) -> INT(10);` |
+| `DCL-PROC` | Definition with body | `DCL-PROC sum(a INT(10), b INT(10)) -> INT(10) EXPORT { return a + b; }` |
 
-**Decisión de scope para acotar L3:** el **body** del procedure soporta declaraciones anidadas (`DCL-S`/`DCL-C`/`DCL-DS`) y cualquier otra cosa cae al fallback `unknown_proc_item`. Esto significa que statements y expressions reales **todavía no se parsean** — vienen en Layer 4. Pero la estructura general del procedure (signature, params, return, body) sí se parsea y valida.
+**Scope decision to keep L3 bounded:** the procedure **body** supports nested declarations (`DCL-S`/`DCL-C`/`DCL-DS`) and anything else falls through to the `unknown_proc_item` fallback. That means real statements and expressions **are not parsed yet** — they come in Layer 4. But the procedure's outer structure (signature, params, return, body) is parsed and validated.
 
-**Lo que sigue sin cubrirse:**
+**Still not covered:**
 - Statements (`if`, `while`, `for`, `select`, `return`, etc.) — Layer 4
 - Expressions (`a + b`, `f(x)`, etc.) — Layer 5
 - File ops (`read`, `chain`, `write`, etc.) — Layer 6
 - `monitor`/`on-error`/`on-exit` — Layer 6
-- Directivas `PRE-*` — Layer 6
+- `PRE-*` directives — Layer 6
 
 ---
 
-## Top-level actualizado
+## Updated top-level
 
 ```bnf
 top_level_item ::= variable_declaration       // L1
@@ -42,7 +42,7 @@ top_level_item ::= variable_declaration       // L1
 
 ---
 
-## Producciones BNF
+## BNF productions
 
 ### Prototype declaration
 
@@ -50,12 +50,12 @@ top_level_item ::= variable_declaration       // L1
 prototype_declaration ::= KW_DCL_PR IDENT inline_param_list? return_type? pr_modifier* SEMI {pin=1}
 ```
 
-**Forma:** `DCL-PR name (params)? (-> RetType)? modifiers* ;`
+**Form:** `DCL-PR name (params)? (-> RetType)? modifiers* ;`
 
-Ejemplos:
+Examples:
 ```bbk
 DCL-PR sum(a INT(10) VALUE, b INT(10) VALUE) -> INT(10);
-DCL-PR greet(name VARCHAR(50) CONST);                   // sin return
+DCL-PR greet(name VARCHAR(50) CONST);                   // no return
 DCL-PR factorial(n INT(10) VALUE) -> INT(10);
 DCL-PR CUSTPROG(custId INT(10) VALUE, status INT(10)) EXTPGM("CUSTPROG");
 ```
@@ -76,9 +76,9 @@ proc_body_item ::= variable_declaration
 private unknown_proc_item ::= !RBRACE !<<eof>> any_token
 ```
 
-**Forma:** `DCL-PROC name (params)? (-> RetType)? modifiers* { body }`
+**Form:** `DCL-PROC name (params)? (-> RetType)? modifiers* { body }`
 
-Ejemplos:
+Examples:
 ```bbk
 DCL-PROC main {
   print("hello");
@@ -93,7 +93,7 @@ DCL-PROC processOrder(rec LIKEDS(orderRec) CONST) {
 }
 ```
 
-El cuerpo soporta `DCL-S`/`DCL-C`/`DCL-DS` locales con análisis completo, y el resto (statements, expressions, function calls) pasa por `unknown_proc_item`. La clave del fallback es **`!RBRACE`**: consume cualquier token excepto `}`, así el `RBRACE` final cierra correctamente el body.
+The body supports local `DCL-S`/`DCL-C`/`DCL-DS` with full analysis, and the rest (statements, expressions, function calls) goes through `unknown_proc_item`. The key for the fallback is **`!RBRACE`**: it consumes any token except `}`, so the final `RBRACE` correctly closes the body.
 
 ### Inline parameter list
 
@@ -105,12 +105,12 @@ private inline_params ::= inline_param (COMMA inline_param)*
 inline_param ::= IDENT type_specification param_modifier* {pin=2}
 ```
 
-**Forma:** `(name TYPE modifier*, name TYPE modifier*, ...)`
+**Form:** `(name TYPE modifier*, name TYPE modifier*, ...)`
 
-Detalles:
-- **Comma-separated** (no colon como CTL-OPT/USAGE).
-- Paréntesis pueden estar vacíos: `()` para procedures sin parámetros.
-- `inline_param {pin=2}` se compromete después de ver `IDENT type_specification`. Si el tipo falla, hace backtrack (útil para tolerar IDENT colgados en otros contextos sin generar errores espurios).
+Details:
+- **Comma-separated** (not colon, unlike CTL-OPT/USAGE).
+- Parentheses may be empty: `()` for procedures without parameters.
+- `inline_param {pin=2}` commits after seeing `IDENT type_specification`. If the type fails, it backtracks (useful to tolerate stray IDENTs in other contexts without generating spurious errors).
 
 ### Return type
 
@@ -118,9 +118,9 @@ Detalles:
 return_type ::= ARROW type_specification {pin=1}
 ```
 
-**Forma:** `-> TYPE`
+**Form:** `-> TYPE`
 
-Sin return type, el procedure es `void` (no retorna nada). Con return type, se debe usar `return expression;` en el body.
+Without a return type, the procedure is `void` (returns nothing). With a return type, the body must use `return expression;`.
 
 ### Procedure-level modifiers
 
@@ -130,8 +130,8 @@ proc_modifier ::= KW_EXPORT | extproc_modifier
 extproc_modifier ::= KW_EXTPROC LPAREN STR_LIT RPAREN {pin=1}
 ```
 
-- `EXPORT` — el procedure es visible fuera del módulo
-- `EXTPROC("name")` — usa este nombre externo en vez del nombre BBK (para naming customizado o llamadas a procs en otros lenguajes)
+- `EXPORT` — the procedure is visible outside the module
+- `EXTPROC("name")` — use this external name instead of the BBK name (for custom naming or calls from procs in other languages)
 
 ### Prototype-level modifiers
 
@@ -144,10 +144,10 @@ pr_modifier ::= extpgm_modifier
 extpgm_modifier ::= KW_EXTPGM LPAREN STR_LIT RPAREN {pin=1}
 ```
 
-- `EXTPGM("PGMNAME")` — el prototipo es para un programa IBM i `*PGM` externo (no un sub-procedure). Se llama con `CALL` en RPG legacy, en BBK es transparente.
-- `EXTPROC("name")` — idem que en proc_modifier
-- `OPDESC` — pasa operational descriptors (metadata de tipos) junto con args
-- `RTNPARM` — convención especial donde el "return" se devuelve por un parámetro implícito
+- `EXTPGM("PGMNAME")` — the prototype is for an external IBM i `*PGM` program (not a sub-procedure). Invoked with `CALL` in legacy RPG; in BBK it's transparent.
+- `EXTPROC("name")` — same as in proc_modifier
+- `OPDESC` — passes operational descriptors (type metadata) alongside args
+- `RTNPARM` — special convention where the "return" is delivered through an implicit parameter
 
 ### Parameter modifiers
 
@@ -160,16 +160,16 @@ param_modifier ::= KW_VALUE
 options_modifier ::= KW_OPTIONS LPAREN STAR_IDENT (COLON STAR_IDENT)* RPAREN {pin=1}
 ```
 
-- `VALUE` — pass by value (default en BBK es by-reference)
-- `CONST` — by-reference inmutable: permite pasar literales/expresiones que el callee no puede modificar
-- `OPDESC` — pasa operational descriptor de este parámetro
-- `OPTIONS(*NOPASS:*OMIT:*VARSIZE:*STRING:*NULLIND)` — flags adicionales (parámetro opcional, omitible, tamaño variable, conversión string, soporte null)
+- `VALUE` — pass by value (BBK default is by-reference)
+- `CONST` — by-reference immutable: allows passing literals/expressions that the callee can't modify
+- `OPDESC` — passes the operational descriptor for this parameter
+- `OPTIONS(*NOPASS:*OMIT:*VARSIZE:*STRING:*NULLIND)` — additional flags (optional parameter, omittable, variable size, string conversion, null support)
 
 ---
 
-## Ejemplos completos
+## Full examples
 
-### Válido — `05-procedures.bbk`
+### Valid — `05-procedures.bbk`
 
 ```bbk
 CTL-OPT MAIN(proceduresDemo);
@@ -204,90 +204,90 @@ DCL-PROC factorial(n INT(10) VALUE) -> INT(10) {
 }
 ```
 
-Layer 3 reconoce toda la estructura externa (CTL-OPT, prototipos, definiciones, params, return types, modifiers, body delimiters, declaraciones internas). Las líneas marcadas como `// statement` se consumen como tokens individuales vía `unknown_proc_item` sin generar errores ni PSI estructurado — esa es la responsabilidad de Layer 4.
+Layer 3 recognizes the entire outer structure (CTL-OPT, prototypes, definitions, params, return types, modifiers, body delimiters, internal declarations). The lines marked `// statement` are consumed as individual tokens via `unknown_proc_item` without generating errors or structured PSI — that's Layer 4's responsibility.
 
-### Errores detectados — `bad-12-bad-procedures.bbk`
+### Errors detected — `bad-12-bad-procedures.bbk`
 
-| Caso | Línea aproximada |
+| Case | Approximate line |
 |---|---|
-| `DCL-PR;` — falta nombre | Prototype sin IDENT |
-| `DCL-PR sum(;` — params sin cerrar | Unterminated args |
-| `DCL-PR sum(a);` — param sin tipo | IDENT solo, sin type_specification |
-| `DCL-PR sum() ->;` — return type vacío | ARROW sin TYPE |
-| `DCL-PR foo EXTPGM(MyProgram);` — tipo de arg | EXTPGM expects STR_LIT, got IDENT |
-| `DCL-PROC main;` (sin body) | Falta `{ ... }` |
-| `DCL-PROC main(a INT(10),) {` | Comma colgante en params |
-| `DCL-PROC body1 { ... ` sin `}` | Body sin cerrar |
-| `DCL-S x;` adentro de body | Error de L1 (missing type) reportado correctamente dentro del body |
+| `DCL-PR;` — missing name | Prototype without IDENT |
+| `DCL-PR sum(;` — unclosed params | Unterminated args |
+| `DCL-PR sum(a);` — param without type | IDENT alone, no type_specification |
+| `DCL-PR sum() ->;` — empty return type | ARROW without TYPE |
+| `DCL-PR foo EXTPGM(MyProgram);` — wrong arg type | EXTPGM expects STR_LIT, got IDENT |
+| `DCL-PROC main;` (without body) | Missing `{ ... }` |
+| `DCL-PROC main(a INT(10),) {` | Trailing comma in params |
+| `DCL-PROC body1 { ... ` without `}` | Unclosed body |
+| `DCL-S x;` inside body | L1 error (missing type) correctly reported inside the body |
 
-**Casos que NO marcan errores** (porque caen al fallback de body):
-- `total = 5 + 7;` — statement no implementado
-- `print("anything");` — call no implementado
-- `if (x > 0) { doSomething(); }` — control flow no implementado
+**Cases that do NOT flag errors** (because they fall through to the body fallback):
+- `total = 5 + 7;` — statement not implemented
+- `print("anything");` — call not implemented
+- `if (x > 0) { doSomething(); }` — control flow not implemented
 
-Eso es lo correcto para L3 — Layer 4 los marcará.
+That is correct for L3 — Layer 4 will flag them.
 
 ---
 
-## Notas de implementación
+## Implementation notes
 
-### El fallback `unknown_proc_item`
+### The `unknown_proc_item` fallback
 
 ```bnf
 private unknown_proc_item ::= !RBRACE !<<eof>> any_token
 ```
 
-La doble negación `!RBRACE !<<eof>>` es la clave del diseño:
-- `!RBRACE` — lookahead negativo: solo procede si el próximo token NO es `}`
-- `!<<eof>>` — lookahead negativo para EOF
+The double negation `!RBRACE !<<eof>>` is the key design choice:
+- `!RBRACE` — negative lookahead: only proceed if the next token is NOT `}`
+- `!<<eof>>` — negative lookahead for EOF
 
-Sin esto, el fallback consumiría el `}` final y el `RBRACE` requerido por `procedure_body` nunca se encontraría, dando un error confuso al final del archivo.
+Without this, the fallback would consume the final `}` and the `RBRACE` required by `procedure_body` would never be found, yielding a confusing error at end-of-file.
 
-### Pin position en `inline_param`
+### Pin position in `inline_param`
 
 ```bnf
 inline_param ::= IDENT type_specification param_modifier* {pin=2}
 ```
 
-`pin=2` significa "pin después de los dos primeros elementos" (IDENT + type_specification). Esto es importante porque:
+`pin=2` means "pin after the first two elements" (IDENT + type_specification). This matters because:
 
-- **Si solo se ve un IDENT** (sin type): backtrack, no error. Esto permite que un IDENT colgado en un contexto raro (poco probable, pero defensive) no force errores.
-- **Una vez vista la combinación `IDENT TYPE`**: commit. Si después falta `)` o aparece un token raro, se reporta error.
+- **Seeing only an IDENT** (without type): backtrack, no error. This allows a stray IDENT in some unusual context (unlikely, but defensive) to not force errors.
+- **Once the `IDENT TYPE` combination is seen**: commit. If `)` is missing or a strange token appears later, an error is reported.
 
-### `LIKEDS` en parámetros (uniforme con DCL-S)
+### `LIKEDS` in parameters (uniform with DCL-S)
 
-Los parámetros usan la misma `type_specification` que `DCL-S`, así que `LIKEDS(...)`, `LIKEREC(...)`, `LIKE(...)` funcionan idénticamente:
+Parameters use the same `type_specification` as `DCL-S`, so `LIKEDS(...)`, `LIKEREC(...)`, `LIKE(...)` work identically:
 
 ```bbk
 DCL-PR processOrder(rec LIKEDS(orderRec) CONST);
 DCL-PR processArray(arr LIKE(myArray) VALUE);
 ```
 
-### Diferencia EXTPGM vs EXTPROC
+### EXTPGM vs EXTPROC difference
 
-Ambos toman `(STR_LIT)`. Sólo se permiten en distintos contextos:
+Both take `(STR_LIT)`. They are only allowed in different contexts:
 
-| Modifier | Donde se permite | Significado |
+| Modifier | Where allowed | Meaning |
 |---|---|---|
-| `EXTPGM` | Solo en `DCL-PR` (no en DCL-PROC) | El prototipo es para un programa externo `*PGM` |
-| `EXTPROC` | Tanto en `DCL-PR` como `DCL-PROC` | Nombre externo de la procedure (distinto del nombre BBK) |
+| `EXTPGM` | Only in `DCL-PR` (not in DCL-PROC) | The prototype is for an external `*PGM` program |
+| `EXTPROC` | Both in `DCL-PR` and `DCL-PROC` | External name of the procedure (different from the BBK name) |
 
-Esto se refleja en la BNF: `pr_modifier` incluye ambos, `proc_modifier` solo `extproc_modifier`.
+This is reflected in the BNF: `pr_modifier` includes both, `proc_modifier` includes only `extproc_modifier`.
 
-### Procedure body NO permite ciertos top-level
+### Procedure body does NOT permit certain top-level items
 
-Dentro de un `procedure_body`, **no** se permiten:
-- `DCL-F` (archivos son globales del módulo)
-- `DCL-PR` (prototipos van al nivel módulo)
-- `DCL-PROC` (RPG no soporta nested procedures)
-- `CTL-OPT` (es directiva de módulo)
+Inside a `procedure_body`, **the following are not permitted**:
+- `DCL-F` (files are module-global)
+- `DCL-PR` (prototypes belong at module level)
+- `DCL-PROC` (RPG does not support nested procedures)
+- `CTL-OPT` (it's a module directive)
 
-Esto está reflejado en `proc_body_item` que solo incluye `variable_declaration | constant_declaration | data_structure_declaration | unknown_proc_item`. Si alguien intenta `DCL-PROC nested { DCL-PROC inner { ... } }`, el `DCL-PROC` interno cae a `unknown_proc_item` y eventualmente puede confundir el cierre (el `{` del inner abre un block que se traga el `}` del outer). Layer 4 podría mejorar esto agregando un error explícito.
+This is reflected in `proc_body_item`, which only includes `variable_declaration | constant_declaration | data_structure_declaration | unknown_proc_item`. If someone tries `DCL-PROC nested { DCL-PROC inner { ... } }`, the inner `DCL-PROC` falls through to `unknown_proc_item` and may eventually confuse the closing brace (the inner `{` opens a block that swallows the outer `}`). Layer 4 could improve this by adding an explicit error.
 
 ---
 
-## Próxima capa
+## Next layer
 
-`layer4.md` (pendiente) — agregará **statements**: `if`/`else`, `while`, `do/while`, `for`, `select`/`when`/`other`, `return`, `break`, `continue`, asignaciones (`x = expr;`), y llamadas como statement (`f(args);`).
+`layer4.md` (pending) — will add **statements**: `if`/`else`, `while`, `do/while`, `for`, `select`/`when`/`other`, `return`, `break`, `continue`, assignments (`x = expr;`), and call-as-statement (`f(args);`).
 
-Layer 5 después agregará **expressions** con toda la jerarquía de precedencia (aritméticos, comparación, lógicos, bitwise, ternario, member access, subscript, function calls como expresión).
+Layer 5 will then add **expressions** with the full precedence hierarchy (arithmetic, comparison, logical, bitwise, ternary, member access, subscript, function calls as expressions).

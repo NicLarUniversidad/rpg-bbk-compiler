@@ -1,20 +1,20 @@
-# Constructos traducibles RPG → C
+# RPG → C translatable constructs
 
-**Propósito:** identificar constructos donde RPG y C **difieren** pero el `bbk-compiler` puede resolver la diferencia mediante traducción explícita en el lowering, eventualmente apoyándose en funciones helper del `bbk-runtime` que son de uso general (no emulación de IBM i).
+**Purpose:** identify constructs where RPG and C **differ** but the `bbk-compiler` can resolve the difference through explicit translation in the lowering, possibly leaning on general-purpose helper functions from `bbk-runtime` (not IBM i emulation).
 
-La distinción con [`runtime-required.md`](runtime-required.md): los items de este archivo se traducen con código C estándar más, a lo sumo, helpers numéricos/string. No necesitan modelar conceptos exóticos del sistema operativo IBM i.
+The distinction from [`runtime-required.md`](runtime-required.md): the items in this file are translated with standard C plus, at most, numeric/string helpers. They don't need to model exotic IBM i operating-system concepts.
 
-Documentos relacionados:
-- [`similarities.md`](similarities.md) — mapeo directo 1:1
-- [`runtime-required.md`](runtime-required.md) — no resoluble por traducción
+Related documents:
+- [`similarities.md`](similarities.md) — direct 1:1 mapping
+- [`runtime-required.md`](runtime-required.md) — not resolvable by translation alone
 
 ---
 
-## 1. Tipos decimales exactos: PACKED, ZONED, BINDEC
+## 1. Exact decimal types: PACKED, ZONED, BINDEC
 
-**El problema:** C no tiene un tipo decimal exacto en el lenguaje estándar. `float`/`double` son binarios y pierden precisión en operaciones decimales (clásico: `0.1 + 0.2 != 0.3`). RPG usa packed/zoned decimal de hasta 63 dígitos con escala fija.
+**The problem:** C has no exact decimal type in the standard language. `float`/`double` are binary and lose precision in decimal operations (classic: `0.1 + 0.2 != 0.3`). RPG uses packed/zoned decimal up to 63 digits with fixed scale.
 
-**La traducción:** implementar `bbk_decimal_t` en una biblioteca C dentro del runtime. Operaciones como suma, resta, multiplicación, división, comparación expuestas como funciones.
+**The translation:** implement `bbk_decimal_t` in a C library inside the runtime. Operations like add, subtract, multiply, divide, compare exposed as functions.
 
 ```rpg
 DCL-S precio PACKED(7:2);
@@ -32,9 +32,9 @@ bbk_decimal_t total = bbk_dec_zero(9, 2);
 bbk_dec_mul(&total, &precio, &iva);
 ```
 
-**Alternativas conocidas para la biblioteca:** libdecimal, libgmp, o implementación propia (paquete BCD).
+**Known alternatives for the library:** libdecimal, libgmp, or a custom implementation (BCD package).
 
-**No es ejecución de IBM i, es matemática.** Por eso va acá y no en runtime-required.
+**This is not IBM i execution, it's math.** That's why it goes here, not in runtime-required.
 
 ---
 
@@ -48,15 +48,15 @@ EVAL(H) precio = total / cantidad;
 bbk_dec_div_round(&precio, &total, &cantidad, BBK_ROUND_HALF_UP);
 ```
 
-Mismo patrón: la regla de redondeo va como flag al helper de la biblioteca decimal.
+Same pattern: the rounding rule goes as a flag to the decimal-library helper.
 
 ---
 
-## 3. VARCHAR (strings de longitud variable)
+## 3. VARCHAR (variable-length strings)
 
-**El problema:** RPG `VARCHAR(n)` almacena longitud actual + datos. C tiene `char[]` con terminador `\0`.
+**The problem:** RPG `VARCHAR(n)` stores current length + data. C has `char[]` with `\0` terminator.
 
-**La traducción:** struct con prefijo de longitud:
+**The translation:** struct with length prefix:
 
 ```c
 typedef struct {
@@ -76,42 +76,42 @@ bbk_varchar_t *nombre = bbk_varchar_alloc(50);
 bbk_varchar_set(nombre, "Nicolas");
 ```
 
-**Alternativamente** (más simple, peor performance):
+**Alternatively** (simpler, worse performance):
 
 ```c
 typedef struct {
     uint16_t length;
     char data[51];      // capacity + 1
-} bbk_varchar_50_t;     // un tipo por capacidad declarada
+} bbk_varchar_50_t;     // one type per declared capacity
 ```
 
 ---
 
-## 4. CHAR (strings de longitud fija)
+## 4. CHAR (fixed-length strings)
 
-**El problema:** RPG `CHAR(n)` rellena con blancos a la derecha hasta longitud `n`. C `char[n]` no tiene esa convención.
+**The problem:** RPG `CHAR(n)` pads with blanks on the right up to length `n`. C `char[n]` has no such convention.
 
-**La traducción:** asignaciones a CHAR pad explícitamente:
+**The translation:** CHAR assignments pad explicitly:
 
 ```rpg
 DCL-S codigo CHAR(5);
 codigo = 'AB';
-// codigo ahora es 'AB   ' (con 3 blancos)
+// codigo is now 'AB   ' (with 3 blanks)
 ```
 
 ```c
 char codigo[5];
 bbk_char_assign(codigo, 5, "AB");
-// internamente: strncpy + relleno con ' ' hasta 5
+// internally: strncpy + pad with ' ' up to 5
 ```
 
 ---
 
 ## 5. Date / Time / Timestamp
 
-**El problema:** C tiene `time_t` (segundos desde epoch) y `struct tm`, pero no soporta directamente fechas anteriores a 1970 ni operaciones tipo "agregar 3 meses".
+**The problem:** C has `time_t` (seconds since epoch) and `struct tm`, but does not directly support dates before 1970 or operations like "add 3 months".
 
-**La traducción:** struct propio con helpers:
+**The translation:** custom struct with helpers:
 
 ```c
 typedef struct { int16_t year; int8_t month; int8_t day; } bbk_date_t;
@@ -123,25 +123,25 @@ int32_t    bbk_date_diff_days(bbk_date_t a, bbk_date_t b);
 // etc.
 ```
 
-Mapeo de BIFs:
+BIF mapping:
 
-| BIF RPG | Helper C |
+| RPG BIF | C helper |
 |---|---|
 | `%DATE(s:fmt)` | `bbk_date_parse(s, fmt)` |
-| `%DAYS(n)` | (devuelve una duración, internamente un int32_t) |
+| `%DAYS(n)` | (returns a duration, internally an int32_t) |
 | `%DIFF(a:b:fmt)` | `bbk_date_diff_X(a, b)` |
 
 ---
 
-## 6. Indicators (estilo legacy *IN01-*IN99)
+## 6. Indicators (legacy *IN01-*IN99 style)
 
-**El problema:** los 99 indicators numéricos de RPG son booleanos globales `'1'`/`'0'` (carácter, no bit). Las opcodes legacy los setean implícitamente. Los expresiones legacy hacen `*IN50` para leer indicator 50.
+**The problem:** the 99 numeric RPG indicators are global `'1'`/`'0'` booleans (character, not bit). Legacy opcodes set them implicitly. Legacy expressions do `*IN50` to read indicator 50.
 
-**La traducción:**
+**The translation:**
 
 ```c
-// En bbk-runtime, declarado en bbk-runtime.h:
-extern bbk_indicator_t bbk_indicators[100];   // *IN00 a *IN99
+// In bbk-runtime, declared in bbk-runtime.h:
+extern bbk_indicator_t bbk_indicators[100];   // *IN00 to *IN99
 extern bbk_indicator_t bbk_inlr;              // *INLR
 // etc.
 
@@ -160,13 +160,13 @@ if (_IN(50) == BBK_ON) {
 }
 ```
 
-Los opcodes que setean indicators (`CHAIN`, `READ`, etc.) llaman a helpers que actualizan `bbk_indicators[]` como side effect.
+The opcodes that set indicators (`CHAIN`, `READ`, etc.) call helpers that update `bbk_indicators[]` as a side effect.
 
-**En código moderno (con BIFs `%FOUND`, `%EOF`, etc.):** la traducción es más limpia — esas BIFs devuelven `bool` y el lowering emite `if (bbk_found(...))` sin tocar el array de indicators.
+**In modern code (with BIFs `%FOUND`, `%EOF`, etc.):** the translation is cleaner — those BIFs return `bool` and the lowering emits `if (bbk_found(...))` without touching the indicator array.
 
 ---
 
-## 7. SELECT / WHEN / OTHER → cadena if/else
+## 7. SELECT / WHEN / OTHER → if/else chain
 
 ```rpg
 SELECT;
@@ -189,11 +189,11 @@ if (bbk_char_eq(tipo, "A")) {
 }
 ```
 
-**No se puede mapear a `switch`** porque RPG `WHEN` toma una expresión booleana arbitraria, no un valor que se compara contra el discriminante. La traducción a if/else en cadena es directa.
+**It cannot be mapped to `switch`** because RPG `WHEN` takes an arbitrary boolean expression, not a value compared against the discriminant. Translation to a chained if/else is direct.
 
 ---
 
-## 8. Arrays 1-indexados → arrays C 0-indexados
+## 8. 1-indexed arrays → 0-indexed C arrays
 
 ```rpg
 DCL-S nums INT(10) DIM(10);
@@ -203,17 +203,17 @@ nums(10) = 200;
 
 ```c
 int32_t nums[10];
-nums[0] = 100;     // nums(1) en RPG
-nums[9] = 200;     // nums(10) en RPG
+nums[0] = 100;     // nums(1) in RPG
+nums[9] = 200;     // nums(10) in RPG
 ```
 
-**Decisión de diseño del frontend:** restar 1 al subíndice durante el lowering. Si el subíndice es una variable, emitir `nums[i - 1]`. Optimización opcional: cuando es literal, computar en tiempo de compilación.
+**Frontend design decision:** subtract 1 from the subscript during lowering. If the subscript is a variable, emit `nums[i - 1]`. Optional optimization: when it's a literal, compute at compile time.
 
-**Alternativa más fea pero a veces necesaria:** usar arrays C de tamaño N+1 y desperdiciar el índice 0. Más fácil para subíndices variables; peor uso de memoria.
+**Uglier alternative, sometimes needed:** use C arrays of size N+1 and waste index 0. Easier for variable subscripts; worse memory usage.
 
 ---
 
-## 9. Data structures con OVERLAY
+## 9. Data structures with OVERLAY
 
 ```rpg
 DCL-DS persona QUALIFIED;
@@ -229,18 +229,18 @@ typedef struct {
         struct {
             char nombre[50];
             char apellido[50];
-            char filler[1];     // para alinear a 101 total si hace falta
+            char filler[1];     // to align to 101 total if needed
         };
         char fullName[101];
     };
 } persona_ds_t;
 ```
 
-C99 soporta **anonymous unions** dentro de structs (extensión común desde C11, pero gcc lo acepta como extensión en C99). Permite mantener el acceso `persona.fullName` sin un prefijo extra.
+C99 supports **anonymous unions** inside structs (a common extension since C11, but gcc accepts it as an extension in C99). Lets you keep the `persona.fullName` access with no extra prefix.
 
 ---
 
-## 10. DCL-DS QUALIFIED y acceso `.`
+## 10. DCL-DS QUALIFIED and `.` access
 
 ```rpg
 DCL-DS emp QUALIFIED;
@@ -261,115 +261,115 @@ emp_t emp;
 emp.id = 100;
 ```
 
-Mapeo directo. C ya tiene `.` para acceso a struct members.
+Direct mapping. C already has `.` for struct member access.
 
 ---
 
-## 11. LIKE y LIKEDS — type inheritance
+## 11. LIKE and LIKEDS — type inheritance
 
 ```rpg
-DCL-S total LIKE(precio);                 // mismo tipo que precio
-DCL-DS empClone LIKEDS(emp);              // misma estructura que emp
+DCL-S total LIKE(precio);                 // same type as precio
+DCL-DS empClone LIKEDS(emp);              // same structure as emp
 ```
 
 ```c
-// Resuelto en compile time por el frontend:
-bbk_decimal_t total;                      // copia el tipo decimal de precio
-emp_t empClone;                           // alias del typedef de emp
+// Resolved at compile time by the frontend:
+bbk_decimal_t total;                      // copies the decimal type from precio
+emp_t empClone;                           // alias of the emp typedef
 ```
 
-**Característica del frontend:** mantener una tabla de símbolos con tipos; cuando aparece `LIKE`, sustituir por el tipo resuelto.
+**Frontend feature:** maintain a symbol table with types; when `LIKE` appears, substitute the resolved type.
 
 ---
 
-## 12. BIFs traducibles a funciones C
+## 12. BIFs translatable to C functions
 
-Casi todas las BIFs son traducciones directas a llamadas a helpers del runtime:
+Almost all BIFs are direct translations to runtime helper calls:
 
-| BIF | Equivalente C |
+| BIF | C equivalent |
 |---|---|
 | `%TRIM(s)` | `bbk_trim(s)` |
 | `%TRIML(s)` | `bbk_triml(s)` |
 | `%TRIMR(s)` | `bbk_trimr(s)` |
 | `%SUBST(s:start:len)` | `bbk_substr(s, start, len)` |
 | `%SCAN(needle:hay)` | `bbk_scan(needle, hay)` |
-| `%LEN(s)` | `bbk_len(s)` (para VARCHAR; para CHAR es el tamaño fijo conocido) |
-| `%CHAR(n)` | `bbk_to_char(n)` (varias sobrecargas por tipo) |
+| `%LEN(s)` | `bbk_len(s)` (for VARCHAR; for CHAR it's the known fixed size) |
+| `%CHAR(n)` | `bbk_to_char(n)` (multiple overloads by type) |
 | `%DEC(s)` | `bbk_to_dec(s, prec, scale)` |
 | `%INT(n)`, `%INTH(n)` | `bbk_to_int(n)`, `bbk_to_int_round(n)` |
-| `%ABS(n)` | `bbk_abs(n)` o `abs()`/`llabs()` para enteros |
-| `%ELEM(arr)` | constante en tiempo de compilación (`sizeof(arr)/sizeof(arr[0])`) |
+| `%ABS(n)` | `bbk_abs(n)` or `abs()`/`llabs()` for integers |
+| `%ELEM(arr)` | compile-time constant (`sizeof(arr)/sizeof(arr[0])`) |
 | `%ADDR(v)` | `&v` |
-| `%SIZE(v)` | `sizeof(v)` o constante computada |
+| `%SIZE(v)` | `sizeof(v)` or computed constant |
 
-**Patrón común:** una BIF → una función C en la biblioteca de runtime. La gramática de la BIF se preserva como llamada a función. Lo único distinto es el separador `:` de RPG que se traduce a `,` de C.
+**Common pattern:** one BIF → one C function in the runtime library. The BIF's grammar is preserved as a function call. The only difference is RPG's `:` separator translated to C's `,`.
 
 ---
 
 ## 13. Initialization defaults
 
-**RPG:** variables sin `INZ` se inicializan automáticamente:
-- Numéricos → 0
-- Alfanuméricos → blanks (`' '`)
+**RPG:** variables without `INZ` are auto-initialized:
+- Numerics → 0
+- Alphanumerics → blanks (`' '`)
 - Date → `0001-01-01`
 - Time → `00.00.00`
 
-**C:** locales sin inicializar son indeterminados. Globales y `static` se inicializan a cero.
+**C:** locals without an initializer are indeterminate. Globals and `static` are zero-initialized.
 
-**La traducción:** el frontend tiene que emitir initializers explícitos para variables locales que en RPG son auto-inicializadas.
+**The translation:** the frontend has to emit explicit initializers for local variables that are auto-initialized in RPG.
 
 ```rpg
-DCL-S contador INT(10);            // 0 por default
-DCL-S nombre   CHAR(50);           // blanks por default
+DCL-S contador INT(10);            // 0 by default
+DCL-S nombre   CHAR(50);           // blanks by default
 ```
 
 ```c
 int32_t contador = 0;
 char nombre[50];
-memset(nombre, ' ', 50);           // o un helper bbk_char_clear(nombre, 50)
+memset(nombre, ' ', 50);           // or a helper bbk_char_clear(nombre, 50)
 ```
 
 ---
 
-## 14. Numeric promotion / conversiones explícitas
+## 14. Numeric promotion / explicit conversions
 
-RPG hace conversiones implícitas con reglas de promoción decimal definidas (el resultado se computa en precisión suficiente y se ajusta al destino). C tiene sus propias reglas pero distintas (promociones a `int`, usual arithmetic conversions, etc.).
+RPG performs implicit conversions with defined decimal promotion rules (the result is computed at sufficient precision and adjusted to the target). C has its own rules but they differ (promotions to `int`, usual arithmetic conversions, etc.).
 
-**La traducción:** el frontend emite conversiones explícitas cuando hace falta para preservar la semántica RPG.
+**The translation:** the frontend emits explicit conversions when needed to preserve RPG semantics.
 
 ```rpg
 DCL-S x INT(10);
 DCL-S y FLOAT(8);
 
-x = y;     // float a int — semántica RPG: truncar (o redondear con (H))
+x = y;     // float to int — RPG semantics: truncate (or round with (H))
 ```
 
 ```c
 int32_t x;
 double y;
 
-x = (int32_t)y;          // truncate, semántica equivalente
-// o:
-x = (int32_t)bbk_round(y);    // si fue EVAL(H)
+x = (int32_t)y;          // truncate, equivalent semantics
+// or:
+x = (int32_t)bbk_round(y);    // if it was EVAL(H)
 ```
 
 ---
 
-## 15. Free-form vs fixed-form → AST unificado
+## 15. Free-form vs fixed-form → unified AST
 
-**El problema:** la `rpg-frontend` recibe código en tres formas distintas (fully-free, mixed con `/FREE`, fixed-form puro). El lowering debería trabajar sobre **una sola representación**.
+**The problem:** the `rpg-frontend` receives code in three different forms (fully-free, mixed with `/FREE`, pure fixed-form). The lowering should work on **a single representation**.
 
-**La traducción:** el frontend normaliza todas las formas a un mismo AST. El parser detecta el modo en el header del archivo y dispatcha al sub-parser apropiado, pero todos producen los mismos nodos de AST.
+**The translation:** the frontend normalizes all forms to the same AST. The parser detects the mode in the file header and dispatches to the appropriate sub-parser, but they all produce the same AST nodes.
 
-No es una traducción RPG → C propiamente dicha; es trabajo del frontend. Pero conviene mencionarlo acá porque elimina una dimensión de complejidad antes de que el lowering la vea.
+It's not strictly an RPG → C translation; it's frontend work. But it's worth mentioning here because it removes a dimension of complexity before the lowering sees it.
 
 ---
 
 ## 16. Service program binding → linker
 
-**RPG:** los `*SRVPGM` se bindean usando *binding directories* que el compilador resuelve durante la creación del `*PGM` o el `*MODULE`.
+**RPG:** `*SRVPGM` are bound using *binding directories* that the compiler resolves while creating the `*PGM` or `*MODULE`.
 
-**C:** linker estándar (`gcc` linkea objetos `.o` y bibliotecas `.so`/`.dll`). El mapeo conceptual:
+**C:** standard linker (`gcc` links `.o` objects and `.so`/`.dll` libraries). Conceptual mapping:
 
 | RPG | C (gcc + ld) |
 |---|---|
@@ -377,10 +377,10 @@ No es una traducción RPG → C propiamente dicha; es trabajo del frontend. Pero
 | `*PGM` | `.exe` |
 | `*SRVPGM` | `.so` / `.dll` shared library |
 | Binding directory | linker flags (`-l`, `-L`) |
-| `EXPORT` | símbolo visible (default sin `static`) |
+| `EXPORT` | visible symbol (default, no `static`) |
 | `IMPORT` | `extern` |
 
-**No es exactamente lo mismo** (no hay activation groups, scope diferente), pero el modelo de archivos compilados sueltos que se linkean para producir un ejecutable/biblioteca es análogo.
+**It's not exactly the same** (no activation groups, different scope), but the model of separately compiled files linked together to produce an executable/library is analogous.
 
 ---
 
@@ -400,45 +400,45 @@ typedef struct {
 } reg_t;
 
 reg_t reg[100];
-int32_t reg_occur = 0;        // emula el OCCUR pointer de RPG
+int32_t reg_occur = 0;        // emulates RPG's OCCUR pointer
 ```
 
-El opcode legacy `OCCUR n reg` se traduce a setear el índice `reg_occur = n - 1`. Cualquier acceso a `reg.campo1` se traduce a `reg[reg_occur].campo1`.
+The legacy `OCCUR n reg` opcode translates to setting the index `reg_occur = n - 1`. Any access to `reg.campo1` translates to `reg[reg_occur].campo1`.
 
-(En código moderno se evita OCCURS y se usa `DIM` con acceso explícito por índice — ese caso ya está cubierto en §8.)
+(Modern code avoids OCCURS and uses `DIM` with explicit indexed access — that case is already covered in §8.)
 
 ---
 
 ## 18. Embedded SQL (SQLRPGLE)
 
-Las statements `EXEC SQL ... END-EXEC` son **pre-procesadas** por el SQL precompiler antes de la compilación RPG. Generan llamadas a APIs SQLI.
+The statements `EXEC SQL ... END-EXEC` are **preprocessed** by the SQL precompiler before RPG compilation. They generate calls to SQLI APIs.
 
-**La traducción equivalente en C:** usar una biblioteca SQL embebido (ESQL/C estándar o equivalente). Idealmente el frontend procesa las statements SQL en una fase separada y emite código C que use una API de DB.
+**Equivalent translation in C:** use an embedded SQL library (standard ESQL/C or equivalent). Ideally the frontend processes SQL statements in a separate phase and emits C code that uses a DB API.
 
-**Decisión de diseño pendiente:** qué motor de DB usa el `bbk-runtime` para emular DB2/400. Opciones: SQLite (embebido, fácil), PostgreSQL (más capabilidades pero requiere servidor). Esto cae más en runtime-required, pero el aspecto puramente sintáctico de "EXEC SQL ... END-EXEC → llamada a API" es traducible.
+**Pending design decision:** which DB engine `bbk-runtime` uses to emulate DB2/400. Options: SQLite (embedded, easy), PostgreSQL (more capabilities but requires a server). This leans more toward runtime-required, but the purely syntactic aspect of "EXEC SQL ... END-EXEC → API call" is translatable.
 
 ---
 
-## Resumen
+## Summary
 
-Constructos que requieren mapeo pero son resolubles por el `bbk-compiler` + helpers C de uso general:
+Constructs that require mapping but are solvable by `bbk-compiler` + general-purpose C helpers:
 
-- **Decimales exactos** (packed/zoned) → biblioteca decimal
-- **EVAL(H)** half-adjust → helper con flag de redondeo
-- **VARCHAR / CHAR** con relleno → structs / helpers de string
-- **Date / Time / Timestamp** → structs y helpers
-- **Indicators legacy** → array global de booleanos
-- **SELECT/WHEN/OTHER** → cadena if/else
-- **Arrays 1-indexados** → offset en el frontend
-- **DS con OVERLAY** → union dentro de struct
+- **Exact decimals** (packed/zoned) → decimal library
+- **EVAL(H)** half-adjust → helper with rounding flag
+- **VARCHAR / CHAR** with padding → structs / string helpers
+- **Date / Time / Timestamp** → structs and helpers
+- **Legacy indicators** → global boolean array
+- **SELECT/WHEN/OTHER** → if/else chain
+- **1-indexed arrays** → offset in the frontend
+- **DS with OVERLAY** → union inside struct
 - **DCL-DS QUALIFIED** → struct
-- **LIKE / LIKEDS** → resolución en el frontend
-- **BIFs** → llamadas a helpers de runtime
-- **Initialization defaults** → initializers explícitos emitidos por el frontend
-- **Conversiones numéricas** → casts explícitos con reglas RPG
-- **Free-form vs fixed-form** → unificación a AST en el frontend
+- **LIKE / LIKEDS** → resolved in the frontend
+- **BIFs** → runtime helper calls
+- **Initialization defaults** → explicit initializers emitted by the frontend
+- **Numeric conversions** → explicit casts with RPG rules
+- **Free-form vs fixed-form** → unification to AST in the frontend
 - **Service program binding** → linker
-- **Multi-occurrence DS** → array indexado con cursor
-- **Embedded SQL** → llamadas a API de DB
+- **Multi-occurrence DS** → indexed array with a cursor
+- **Embedded SQL** → DB API calls
 
-Todo esto es trabajo "razonable" para un compilador. La biblioteca de runtime asociada (`bbk-runtime`) que da soporte a estos items es esencialmente una biblioteca matemática/de strings/de fechas — no requiere emular el sistema operativo de IBM i.
+All of this is "reasonable" work for a compiler. The associated runtime library (`bbk-runtime`) that supports these items is essentially a math/string/date library — it doesn't require emulating the IBM i operating system.

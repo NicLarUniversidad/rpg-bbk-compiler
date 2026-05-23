@@ -1,6 +1,8 @@
 // Errors: malformed statements inside procedure bodies.
 // These exercise the Layer 4 grammar (statements + expressions).
 
+
+
 DCL-PROC controlErrors {
   DCL-S x INT(10) INZ(0);
   DCL-S name VARCHAR(50);

@@ -1,38 +1,38 @@
 # BBK Grammar — Layer 5
 
-**Estado:** implementada y verificada
-**Fuente del parser:** [`plugin-bbk/src/main/grammar/BBK.bnf`](../../../plugin-bbk/src/main/grammar/BBK.bnf)
-**Fuente del lexer:** [`plugin-bbk/src/main/grammar/BBK.flex`](../../../plugin-bbk/src/main/grammar/BBK.flex) (19 tokens nuevos agregados en esta capa)
-**Pre-requisitos:** [`layer1.md`](layer1.md), [`layer2.md`](layer2.md), [`layer3.md`](layer3.md), [`layer4.md`](layer4.md)
-**Archivos de prueba:** [`10-files.bbk`](../../../tests/boxbreaker/examples/10-files.bbk) (válido — usa file ops y monitor), [`bad-14-bad-file-ops-and-subroutines.bbk`](../../../tests/boxbreaker/examples/bad/bad-14-bad-file-ops-and-subroutines.bbk) (errores)
+**Status:** implemented and verified
+**Parser source:** [`plugin-bbk/src/main/grammar/BBK.bnf`](../../../plugin-bbk/src/main/grammar/BBK.bnf)
+**Lexer source:** [`plugin-bbk/src/main/grammar/BBK.flex`](../../../plugin-bbk/src/main/grammar/BBK.flex) (19 new tokens added in this layer)
+**Prerequisites:** [`layer1.md`](layer1.md), [`layer2.md`](layer2.md), [`layer3.md`](layer3.md), [`layer4.md`](layer4.md)
+**Test files:** [`10-files.bbk`](../../../tests/boxbreaker/examples/10-files.bbk) (valid — uses file ops and monitor), [`bad-14-bad-file-ops-and-subroutines.bbk`](../../../tests/boxbreaker/examples/bad/bad-14-bad-file-ops-and-subroutines.bbk) (errors)
 
 ---
 
-## Reframing de scope
+## Scope reframing
 
-En `layer4.md` había dejado L5 vaga ("refinamientos") porque ya había metido casi todo en L4. **Layer 5 se reorientó** para completar lo que todavía caía al fallback dentro de procedure bodies: file ops, subroutines y CALLP. Las directivas top-level (`PRE-*`) se mueven a Layer 6.
+In `layer4.md` L5 had been left vague ("refinements") because nearly everything had been pushed into L4. **Layer 5 was redirected** to complete what still fell through inside procedure bodies: file ops, subroutines and CALLP. Top-level directives (`PRE-*`) move to Layer 6.
 
-## Alcance
+## Scope
 
-| Construcción | Forma | Ejemplo |
+| Construct | Form | Example |
 |---|---|---|
-| File ops (acceso) | `read file [ds];` `chain key file [ds];` `setll key file;` `reade key file [ds];` etc. | `chain custId customers customerRec;` |
-| File ops (escritura) | `write target [ds];` `update target [ds];` `delete [key] file;` | `write orders orderRec;` |
-| File ops (ciclo de vida) | `open file;` `close file;` `unlock file;` `exfmt format [ds];` | `open report;` |
-| Subroutine definition | `BEGSR name; ... ENDSR [name];` | Ver abajo |
+| File ops (access) | `read file [ds];` `chain key file [ds];` `setll key file;` `reade key file [ds];` etc. | `chain custId customers customerRec;` |
+| File ops (write) | `write target [ds];` `update target [ds];` `delete [key] file;` | `write orders orderRec;` |
+| File ops (lifecycle) | `open file;` `close file;` `unlock file;` `exfmt format [ds];` | `open report;` |
+| Subroutine definition | `BEGSR name; ... ENDSR [name];` | See below |
 | Subroutine call | `EXSR name;` | `EXSR validate;` |
-| Salir de subroutine | `LEAVESR;` | `LEAVESR;` |
-| CALLP explícito | `CALLP procName(args);` | `CALLP CUSTPROG(custId, status);` |
+| Exit subroutine | `LEAVESR;` | `LEAVESR;` |
+| Explicit CALLP | `CALLP procName(args);` | `CALLP CUSTPROG(custId, status);` |
 
-**Lo que sigue sin cubrirse:**
-- Directivas `PRE-*` — **Layer 6**
-- BIFs `%X(...)` con su sintaxis especial — Layer 6 o queda como mejora futura del lexer
+**Still not covered:**
+- `PRE-*` directives — **Layer 6**
+- `%X(...)` BIFs with their special syntax — Layer 6 or a future lexer improvement
 
 ---
 
-## Tokens nuevos (19)
+## New tokens (19)
 
-Layer 5 requiere agregar nuevos tokens al lexer JFlex porque antes no existían:
+Layer 5 requires adding new JFlex lexer tokens that did not exist before:
 
 ```
 // File operations (14)
@@ -61,13 +61,13 @@ KW_LEAVESR   "LEAVESR"
 KW_CALLP     "CALLP"
 ```
 
-**Trade-off:** los nombres son ahora keywords reservados. Si un usuario tenía una variable llamada `read`, `chain`, `write`, etc., ya no puede. Aceptable porque son nombres semánticamente cargados en RPG.
+**Trade-off:** these names are now reserved keywords. If a user had a variable named `read`, `chain`, `write`, etc., they can't anymore. Acceptable because they are semantically loaded names in RPG.
 
-Convención: file ops en minúsculas (estilo C: `read`, `write`), subroutines en mayúsculas (estilo RPG: `BEGSR`, `EXSR`). Recordá que **BBK es case-insensitive** (`READ` = `read` = `Read`), pero la convención visual ayuda a leer.
+Convention: file ops in lowercase (C style: `read`, `write`), subroutines in uppercase (RPG style: `BEGSR`, `EXSR`). Remember that **BBK is case-insensitive** (`READ` = `read` = `Read`), but the visual convention aids reading.
 
 ---
 
-## Producciones BNF
+## BNF productions
 
 ### File operation statements
 
@@ -100,11 +100,11 @@ close_op   ::= KW_CLOSE   IDENT SEMI {pin=1}
 exfmt_op   ::= KW_EXFMT   IDENT IDENT? SEMI {pin=1}                // exfmt format [ds]
 ```
 
-**Notas de diseño:**
-- **`expression` para keys** en lugar de `IDENT`: permite usar literales, BIFs futuros (`%KDS(...)`), expresiones aritméticas, etc. como key. `IDENT IDENT?` para nombres de archivo / DS de resultado.
-- **`IDENT?` para result DS opcional**: para `chain key file;` (lee a variables globales del programa) o `chain key file ds;` (lee a la DS dada).
-- **`delete expression? IDENT`**: el key es opcional porque `DELETE` también puede usarse en el record actual (sin key) o con key explícito.
-- **Pin después del keyword** en todas las ops: una vez visto `read`/`chain`/etc., el parser se compromete y reporta errores específicos.
+**Design notes:**
+- **`expression` for keys** instead of `IDENT`: allows literals, future BIFs (`%KDS(...)`), arithmetic expressions, etc. as keys. `IDENT IDENT?` for file / result DS names.
+- **`IDENT?` for optional result DS**: for `chain key file;` (reads into the program's global variables) or `chain key file ds;` (reads into the given DS).
+- **`delete expression? IDENT`**: the key is optional because `DELETE` can also operate on the current record (no key) or with an explicit key.
+- **Pin after the keyword** in every op: once `read`/`chain`/etc. is seen, the parser commits and reports specific errors.
 
 ### Subroutines
 
@@ -124,32 +124,32 @@ exsr_statement    ::= KW_EXSR IDENT SEMI {pin=1}
 leavesr_statement ::= KW_LEAVESR SEMI {pin=1}
 ```
 
-**Diferencias con DCL-PROC:**
-- **No usa llaves** `{ }`. Delimitado por `BEGSR ... ENDSR`. Esto es la sintaxis RPG histórica preservada.
-- El nombre repetido después de ENDSR es opcional: `BEGSR mySR; ... ENDSR mySR;` o solo `ENDSR;`. Mejora claridad pero no es obligatorio.
-- Una subroutine es un `block_item` (vive dentro de un procedure body), no un `top_level_item`.
+**Differences with DCL-PROC:**
+- **No braces** `{ }`. Delimited by `BEGSR ... ENDSR`. This preserves the historical RPG syntax.
+- The name repeated after ENDSR is optional: `BEGSR mySR; ... ENDSR mySR;` or just `ENDSR;`. Improves clarity but is not mandatory.
+- A subroutine is a `block_item` (lives inside a procedure body), not a `top_level_item`.
 
-**El truco de `unknown_sr_item`:**
-- `!KW_ENDSR` — para detener antes de que ENDSR cierre la SR
-- `!RBRACE` — para que si falta ENDSR no consuma el `}` del procedure padre
-- `!<<eof>>` — para detenerse en EOF
+**The `unknown_sr_item` trick:**
+- `!KW_ENDSR` — to stop before ENDSR closes the SR
+- `!RBRACE` — so that a missing ENDSR doesn't consume the parent procedure's `}`
+- `!<<eof>>` — to stop at EOF
 
-Esta triple negación asegura que un BEGSR mal cerrado dé un error claro ("ENDSR expected") y no se coma el resto del archivo.
+This triple negation guarantees that a poorly closed BEGSR yields a clear error ("ENDSR expected") and does not swallow the rest of the file.
 
-### CALLP (call-as-statement explícito)
+### CALLP (explicit call-as-statement)
 
 ```bnf
 callp_statement ::= KW_CALLP postfix_expression SEMI {pin=1}
 ```
 
-**Forma:** `CALLP procName(args);`
+**Form:** `CALLP procName(args);`
 
-CALLP es opcional: una llamada como `myProc(a, b);` también funciona vía `expression_statement` (la expresión es la llamada, y el `;` la termina). CALLP existe para casos donde:
-- Querés ser explícito de que es una llamada (legibilidad)
-- Hay ambigüedad sintáctica (raros en BBK porque las llamadas tienen `()`)
-- Compatibilidad con RPG donde CALLP era requerido
+CALLP is optional: a call such as `myProc(a, b);` also works via `expression_statement` (the expression is the call, terminated by `;`). CALLP exists for cases where:
+- You want to be explicit that it's a call (readability)
+- There is syntactic ambiguity (rare in BBK because calls have `()`)
+- Compatibility with RPG where CALLP was required
 
-### Integración con statement y block_item
+### Integration with statement and block_item
 
 ```bnf
 statement ::= if_statement
@@ -175,13 +175,13 @@ block_item ::= variable_declaration
              | unknown_block_item
 ```
 
-**Orden de alternativas en `statement`:** las file ops y EXSR/LEAVESR/CALLP van **antes** de expression_statement. Esto es importante porque `read customers;` antes de L5 (cuando no había KW_READ) caía como expression_statement con falso error "SEMI expected". Ahora matchea como `read_op` primero. ✓
+**Alternative order in `statement`:** file ops and EXSR/LEAVESR/CALLP go **before** expression_statement. This is important because `read customers;` before L5 (when KW_READ did not exist) fell through as an expression_statement with the false error "SEMI expected". Now it matches as `read_op` first. ✓
 
 ---
 
-## Ejemplos
+## Examples
 
-### Válido — `10-files.bbk`
+### Valid — `10-files.bbk`
 
 ```bbk
 DCL-F customers DISK USAGE(*INPUT) KEYED EXTNAME("CUSTOMER");
@@ -236,109 +236,109 @@ DCL-PROC filesDemo {
 }
 ```
 
-Layer 5 reconoce y estructura completamente: file ops (`open`, `chain`, `setll`, `reade`, `write`, `close`), control flow (`if`, `while`), expressions (`status() == 0`), assignment con member access (`orderRec.orderId = 99999`), llamadas como statement (`print(...)`, `processOrder(orderRec)`).
+Layer 5 fully recognizes and structures: file ops (`open`, `chain`, `setll`, `reade`, `write`, `close`), control flow (`if`, `while`), expressions (`status() == 0`), assignment with member access (`orderRec.orderId = 99999`), call-as-statement (`print(...)`, `processOrder(orderRec)`).
 
-### Ejemplo con subroutines
+### Example with subroutines
 
 ```bbk
 DCL-PROC oldSchoolStyle {
   DCL-S counter INT(10) INZ(0);
 
-  // Llamada a subroutine
+  // Subroutine call
   EXSR validate;
   EXSR process;
 
   return;
 
-  // Definición de subroutines
+  // Subroutine definitions
   BEGSR validate;
     if (counter < 0) {
-      LEAVESR;   // salir temprano de la SR
+      LEAVESR;   // exit the SR early
     }
     counter += 1;
   ENDSR validate;
 
   BEGSR process;
-    DCL-S temp INT(10);  // local a la SR (en realidad escope del proc, pero idea)
+    DCL-S temp INT(10);  // local to the SR (actually proc-scoped, but the idea is here)
     temp = counter * 2;
     print(char(temp));
-  ENDSR;   // ENDSR sin nombre repetido también válido
+  ENDSR;   // ENDSR without repeated name is also valid
 }
 ```
 
-### Errores detectados — `bad-14-bad-file-ops-and-subroutines.bbk`
+### Errors detected — `bad-14-bad-file-ops-and-subroutines.bbk`
 
-| Categoría | Casos |
+| Category | Cases |
 |---|---|
-| File ops sin args mínimos | `read;`, `chain;`, `setll;`, `write;`, `open;` |
-| File ops sin `;` | `read customers customerRec`, `chain key`, `delete` |
-| File ops parciales | `setll *START;` (sin file), `reade ;` (sin key), `chain ( orders;` (parens) |
-| Subroutine def sin nombre | `BEGSR;` |
-| Subroutine sin `;` después del nombre | `BEGSR mySR` |
-| Subroutine sin cierre | `BEGSR mySR; ... ` (sin ENDSR) |
-| ENDSR sin `;` | `ENDSR otherSR` (falta `;`) |
-| EXSR sin nombre / sin `;` | `EXSR;`, `EXSR mySR` |
-| LEAVESR sin `;` | `LEAVESR` |
-| CALLP sin call | `CALLP;` |
-| CALLP sin parens o sin `;` | `CALLP myProc`, `CALLP myProc(a, b)` |
+| File ops without minimum args | `read;`, `chain;`, `setll;`, `write;`, `open;` |
+| File ops without `;` | `read customers customerRec`, `chain key`, `delete` |
+| Partial file ops | `setll *START;` (no file), `reade ;` (no key), `chain ( orders;` (parens) |
+| Subroutine def without name | `BEGSR;` |
+| Subroutine without `;` after the name | `BEGSR mySR` |
+| Unclosed subroutine | `BEGSR mySR; ... ` (no ENDSR) |
+| ENDSR without `;` | `ENDSR otherSR` (missing `;`) |
+| EXSR without name / without `;` | `EXSR;`, `EXSR mySR` |
+| LEAVESR without `;` | `LEAVESR` |
+| CALLP without call | `CALLP;` |
+| CALLP without parens or without `;` | `CALLP myProc`, `CALLP myProc(a, b)` |
 
 ---
 
-## Notas de implementación
+## Implementation notes
 
-### Convención de keywords case (recordatorio)
+### Keyword case convention (reminder)
 
-BBK es case-insensitive en el lexer (`%ignorecase` en BBK.flex). Por eso `READ` = `read` = `Read` = `rEaD` desde el punto de vista del parser. La convención visual sugerida:
+BBK is case-insensitive at the lexer level (`%ignorecase` in BBK.flex). So `READ` = `read` = `Read` = `rEaD` from the parser's point of view. Suggested visual convention:
 
-- **File ops en minúsculas** (`read`, `chain`, `write`) — más cerca de C, más fluido al mezclar con expresiones.
-- **Declarations en mayúsculas con guión** (`DCL-S`, `BEGSR`, `ENDSR`) — más cerca de RPG, más reconocible como "estructura del programa".
+- **File ops in lowercase** (`read`, `chain`, `write`) — closer to C, flows better when mixing with expressions.
+- **Declarations in uppercase with hyphens** (`DCL-S`, `BEGSR`, `ENDSR`) — closer to RPG, more recognizable as "program structure".
 
-Pero técnicamente cualquier capitalización es válida.
+But technically any capitalization is valid.
 
-### Por qué `expression` (no `IDENT`) para keys
+### Why `expression` (not `IDENT`) for keys
 
 ```bnf
 chain_op ::= KW_CHAIN expression IDENT IDENT? SEMI {pin=1}
 ```
 
-El primer arg (el key) es `expression`, no `IDENT`. Permite:
-- `chain custId customers ds;` (key = IDENT simple)
-- `chain *START orders;` (key = STAR_IDENT figurativo)
+The first arg (the key) is `expression`, not `IDENT`. It allows:
+- `chain custId customers ds;` (key = simple IDENT)
+- `chain *START orders;` (key = figurative STAR_IDENT)
 - `chain 12345 customers;` (key = literal)
-- Futuro: `chain %KDS(myKeysDS) customers;` cuando agreguemos BIFs
+- Future: `chain %KDS(myKeysDS) customers;` when BIFs are added
 
-Pero `expression` ES greedy. Para `chain x customers;`, el parser:
-- expression: `x` (primary IDENT). Postfix? No LPAREN/etc. después.
-- Sigue por additive, etc. Nada matchea. Expression termina con solo `x`.
+But `expression` IS greedy. For `chain x customers;`, the parser:
+- expression: `x` (primary IDENT). Postfix? No LPAREN/etc. follows.
+- Walks up additive, etc. Nothing matches. Expression ends with just `x`.
 - IDENT `customers` ✓.
 - SEMI ✓.
 
-OK funciona. Pero para `chain x + y customers;` (key calculada):
+OK, it works. For `chain x + y customers;` (computed key):
 - expression: `x` then `+` then `y` (additive expression) = `x + y`.
 - IDENT `customers` ✓.
 
-También funciona.
+Also works.
 
-### Subroutines como sub-bloque dentro de procedures
+### Subroutines as a sub-block inside procedures
 
-Las subroutines son legacy RPG. En BBK las soportamos pero la convención moderna sería usar sub-procedures (DCL-PROC) en su lugar. La diferencia clave:
+Subroutines are legacy RPG. BBK supports them but the modern convention is to use sub-procedures (DCL-PROC) instead. Key difference:
 
-| Aspecto | Subroutine (BEGSR/ENDSR) | Sub-procedure (DCL-PROC) |
+| Aspect | Subroutine (BEGSR/ENDSR) | Sub-procedure (DCL-PROC) |
 |---|---|---|
-| Scope | Comparte variables con el proc padre | Tiene su propio scope |
-| Parámetros | No tiene | Sí, tipados |
-| Return value | No | Sí, opcionalmente |
-| Llamada | `EXSR name;` | `name(args);` |
-| Recomendación moderna | Evitar para código nuevo | Preferir |
+| Scope | Shares variables with the parent proc | Has its own scope |
+| Parameters | None | Yes, typed |
+| Return value | None | Yes, optional |
+| Call | `EXSR name;` | `name(args);` |
+| Modern recommendation | Avoid for new code | Prefer |
 
-BBK las soporta para compatibilidad con RPG legacy. Cuando el frontend lo traduzca, podría convertirlas a procedures auto-generadas con scope explícito.
+BBK supports subroutines for compatibility with legacy RPG. When the frontend translates them, they could be converted into auto-generated procedures with explicit scope.
 
-### Edge case: BEGSR antes del statement que lo llama
+### Edge case: BEGSR before the statement that calls it
 
-En RPG (y BBK por extensión), el orden es libre:
+In RPG (and BBK by extension), order is free:
 ```bbk
 DCL-PROC main {
-  EXSR helper;       // llamada antes de la definición
+  EXSR helper;       // call before the definition
   return;
 
   BEGSR helper;
@@ -347,12 +347,12 @@ DCL-PROC main {
 }
 ```
 
-El parser de L5 acepta esto sin problema — la SR puede definirse en cualquier parte del body. La validación de "EXSR refiere a una SR existente" es semántica, no sintáctica.
+The L5 parser accepts this without issue — the SR can be defined anywhere in the body. Validation of "EXSR refers to an existing SR" is semantic, not syntactic.
 
 ---
 
-## Próxima capa
+## Next layer
 
-`layer6.md` — **directivas de preprocesador** (`PRE-IF`, `PRE-ELSEIF`, `PRE-ELSE`, `PRE-ENDIF`, `PRE-DEFINE`, `PRE-UNDEFINE`, `PRE-INCLUDE`, `PRE-EOF`). Tienen su propia sub-gramática y se procesan idealmente antes que el parser principal, pero por simplicidad las podemos integrar como statements top-level con sintaxis especial.
+`layer6.md` — **preprocessor directives** (`PRE-IF`, `PRE-ELSEIF`, `PRE-ELSE`, `PRE-ENDIF`, `PRE-DEFINE`, `PRE-UNDEFINE`, `PRE-INCLUDE`, `PRE-EOF`). They have their own sub-grammar and are ideally processed before the main parser, but for simplicity we can integrate them as top-level statements with special syntax.
 
-Eventualmente también: BIFs con sintaxis `%X(args)` que requieren un nuevo token para `%IDENT`.
+Eventually also: BIFs with `%X(args)` syntax, which require a new token for `%IDENT`.

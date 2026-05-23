@@ -1,23 +1,23 @@
-# Arquitectura — BoxBreaker
+# Architecture — BoxBreaker
 
 **Repo:** [github.com/NicLarUniversidad/rpg-bbk-compiler](https://github.com/NicLarUniversidad/rpg-bbk-compiler)
 **Tagline:** RPG → C
-**Fecha del documento:** 2026-05-22
-**Estado:** diseño inicial, sin código todavía
+**Document date:** 2026-05-22
+**Status:** initial design, no code yet
 
-Este documento describe la organización de módulos del sistema y las responsabilidades de cada uno. Para el lenguaje intermedio BBK, ver [`bbk-spec.md`](bbk-spec.md) (pendiente).
-
----
-
-## Resumen
-
-El sistema compila y ejecuta programas RPG (IBM i / AS/400) en Windows y Linux mediante un lenguaje intermedio propio llamado **BBK (BoxBreaker)**. Soporta dos modos de ejecución: **intérprete** (ciclo rápido de desarrollo) y **AOT a binario nativo** vía `C` + `gcc` (producción).
-
-El tooling de editor se distribuye como **plugins de IntelliJ** que pueden instalarse en IntelliJ Community estándar, y opcionalmente se empaqueta un **IDE customizado** (BoxBreaker IDE) basado en IntelliJ Platform SDK que bundlea los plugins junto con el runtime de ejecución.
+This document describes the system's module organization and the responsibilities of each one. For the BBK intermediate language, see [`bbk-spec.md`](bbk-spec.md) (pending).
 
 ---
 
-## Pipeline de compilación
+## Summary
+
+The system compiles and runs RPG programs (IBM i / AS/400) on Windows and Linux through a custom intermediate language called **BBK (BoxBreaker)**. It supports two execution modes: **interpreter** (fast development cycle) and **AOT to native binary** via `C` + `gcc` (production).
+
+Editor tooling is distributed as **IntelliJ plugins** that can be installed on stock IntelliJ Community, and optionally a **customized IDE** (BoxBreaker IDE) is packaged on top of the IntelliJ Platform SDK that bundles the plugins together with the execution runtime.
+
+---
+
+## Compilation pipeline
 
 ```
                     ┌─────────────┐
@@ -26,13 +26,13 @@ El tooling de editor se distribuye como **plugins de IntelliJ** que pueden insta
                            │
                            ▼
                   ┌─────────────────┐
-                  │  rpg-frontend   │  lexer + parser + traducción
-                  │  (lib headless) │  RPG → BBK
+                  │  rpg-frontend   │  lexer + parser + translation
+                  │  (headless lib) │  RPG → BBK
                   └────────┬────────┘
                            │
                            ▼
                   ┌─────────────────┐
-                  │   BBK (IR)      │  AST/IR neutro, tipos, semántica
+                  │   BBK (IR)      │  Neutral AST/IR, types, semantics
                   │   bbk-core      │
                   └────────┬────────┘
                            │
@@ -41,7 +41,7 @@ El tooling de editor se distribuye como **plugins de IntelliJ** que pueden insta
               ▼                         ▼
     ┌──────────────────┐      ┌──────────────────┐
     │ bbk-interpreter  │      │  bbk-compiler    │
-    │  (modo dev)      │      │  (modo AOT)      │
+    │   (dev mode)     │      │   (AOT mode)     │
     │                  │      │  BBK → C → gcc   │
     └────────┬─────────┘      └────────┬─────────┘
              │                         │
@@ -52,143 +52,143 @@ El tooling de editor se distribuye como **plugins de IntelliJ** que pueden insta
     └─────────────────┘       └──────────────────┘
              │                         │
              ▼                         ▼
-        Ejecución                  Binario nativo
-        interpretada               (.exe, ELF, Mach-O)
+       Interpreted              Native binary
+        execution               (.exe, ELF, Mach-O)
 ```
 
 ---
 
-## Módulos
+## Modules
 
-El repo es un monorepo Gradle multi-project con 9 subproyectos. Tres capas:
+The repo is a Gradle multi-project monorepo with 9 subprojects. Three layers:
 
-1. **Núcleo headless** (no depende de IntelliJ): `bbk-core`, `rpg-frontend`, `bbk-interpreter`, `bbk-compiler`, `bbk-runtime`.
-2. **Plugins de IntelliJ** (dependen de IntelliJ Platform): `plugin-bbk`, `plugin-rpg`.
-3. **Distribución de IDE**: `boxbreaker-ide`.
+1. **Headless core** (no IntelliJ dependency): `bbk-core`, `rpg-frontend`, `bbk-interpreter`, `bbk-compiler`, `bbk-runtime`.
+2. **IntelliJ plugins** (depend on IntelliJ Platform): `plugin-bbk`, `plugin-rpg`.
+3. **IDE distribution**: `boxbreaker-ide`.
 
-### `bbk-core/` — librería núcleo
+### `bbk-core/` — core library
 
-Tipos y estructuras de datos del lenguaje BBK:
+BBK language types and data structures:
 
-- AST de BBK
-- Modelo de tipos
-- Análisis semántico
-- Utilidades comunes (visitors, transformers, pretty-printer)
+- BBK AST
+- Type model
+- Semantic analysis
+- Common utilities (visitors, transformers, pretty-printer)
 
-**Sin dependencias a IntelliJ Platform.** Es la pieza compartida por todos los demás módulos.
+**No IntelliJ Platform dependencies.** It's the piece shared by every other module.
 
-**Lenguaje:** Java o Kotlin (decidir).
+**Language:** Java or Kotlin (TBD).
 
-### `rpg-frontend/` — librería de traducción RPG
+### `rpg-frontend/` — RPG translation library
 
-Lexer y parser de RPG, más la lógica de traducción RPG → BBK:
+RPG lexer and parser, plus the RPG → BBK translation logic:
 
-- Lexer RPG (manejo de columnas fijas, indicadores, opcodes)
-- Parser RPG → AST RPG
-- Lowering: AST RPG → AST BBK
+- RPG lexer (handling fixed columns, indicators, opcodes)
+- RPG parser → RPG AST
+- Lowering: RPG AST → BBK AST
 
-**Sin dependencias a IntelliJ Platform.** Diseñado para ser usado headless desde CLI, CI, o invocado por el `plugin-rpg`.
+**No IntelliJ Platform dependencies.** Designed to be used headless from CLI, CI, or invoked by `plugin-rpg`.
 
-**Lenguaje:** Java + ANTLR4.
+**Language:** Java + ANTLR4.
 
-### `bbk-interpreter/` — intérprete BBK (modo desarrollo)
+### `bbk-interpreter/` — BBK interpreter (development mode)
 
-Ejecuta BBK directamente sin compilación a nativo. Pensado para iteración rápida y debugging:
+Runs BBK directly without compiling to native. Intended for fast iteration and debugging:
 
-- Evalúa el AST BBK
-- Integra `bbk-runtime` para resolver primitivas IBM i
-- Expone API para integración con debugger
+- Evaluates the BBK AST
+- Integrates `bbk-runtime` to resolve IBM i primitives
+- Exposes an API for debugger integration
 
-**Lenguaje:** Java o Kotlin.
+**Language:** Java or Kotlin.
 
-### `bbk-compiler/` — compilador AOT BBK → C → nativo (modo producción)
+### `bbk-compiler/` — BBK → C → native AOT compiler (production mode)
 
-Toma BBK y genera un binario nativo:
+Takes BBK and generates a native binary:
 
-- Lowering BBK → C99
-- Invoca `gcc` para producir el binario
-- Linkea contra `bbk-runtime`
-- CLI principal del compilador
+- BBK → C99 lowering
+- Invokes `gcc` to produce the binary
+- Links against `bbk-runtime`
+- Main compiler CLI
 
-**Lenguaje:** Java o Kotlin para el lowering; emite C99.
+**Language:** Java or Kotlin for the lowering; emits C99.
 
-### `bbk-runtime/` — runtime de emulación IBM i
+### `bbk-runtime/` — IBM i emulation runtime
 
-Implementación de primitivas IBM i ausentes en Windows/Linux:
+Implementation of IBM i primitives absent from Windows/Linux:
 
 - Job queues, activation groups, library lists
-- Acceso a datos estilo DDS
+- DDS-style data access
 - Spool files
-- I/O específico de IBM i
+- IBM i-specific I/O
 
-Usado por:
-- `bbk-interpreter` (linkeo directo)
-- Binarios producidos por `bbk-compiler` (linkeo nativo)
+Used by:
+- `bbk-interpreter` (direct linking)
+- Binaries produced by `bbk-compiler` (native linking)
 
-**Lenguaje:** decidir entre Java (más simple, requiere JVM en runtime) o C (linkeo directo al binario, sin JVM).
+**Language:** TBD between Java (simpler, requires JVM at runtime) and C (direct binary linking, no JVM).
 
-### `plugin-bbk/` — plugin IntelliJ para BBK
+### `plugin-bbk/` — IntelliJ plugin for BBK
 
-Soporte de lenguaje BBK en IntelliJ:
+BBK language support in IntelliJ:
 
 - Syntax highlighting
-- Parser para el editor (errores inline)
+- Editor parser (inline errors)
 - Autocomplete
-- Navegación (go-to-definition, find usages)
-- Refactors básicos
+- Navigation (go-to-definition, find usages)
+- Basic refactors
 
-**Depende de** `bbk-core` + IntelliJ Platform SDK. **No contiene el intérprete ni el compilador AOT** — esos viven afuera y son invocados por el IDE.
+**Depends on** `bbk-core` + IntelliJ Platform SDK. **Does not contain the interpreter or AOT compiler** — those live outside and are invoked by the IDE.
 
-**Lenguaje:** Kotlin.
+**Language:** Kotlin.
 
-### `plugin-rpg/` — plugin IntelliJ para RPG
+### `plugin-rpg/` — IntelliJ plugin for RPG
 
-Soporte de lenguaje RPG en IntelliJ + integración con traducción a BBK:
+RPG language support in IntelliJ + integration with the BBK translation:
 
-- Syntax highlighting RPG
-- Parser RPG en el editor (vía `rpg-frontend`)
-- Comando "traducir a BBK"
-- Navegación entre RPG y BBK generado
+- RPG syntax highlighting
+- RPG editor parser (via `rpg-frontend`)
+- "Translate to BBK" command
+- Navigation between RPG and generated BBK
 
-**Depende de** `rpg-frontend` + `plugin-bbk` + IntelliJ Platform SDK.
+**Depends on** `rpg-frontend` + `plugin-bbk` + IntelliJ Platform SDK.
 
-**Lenguaje:** Kotlin.
+**Language:** Kotlin.
 
-### `boxbreaker-ide/` — módulo de integración (IDE custom sobre IntelliJ Platform SDK)
+### `boxbreaker-ide/` — integration module (custom IDE on top of IntelliJ Platform SDK)
 
-Es el **punto de integración continua** del sistema. Existe desde la iteración 1 como cáscara mínima de IntelliJ Platform que bundlea el primer plugin, y se va engordando a medida que el resto del sistema aparece. No es un módulo "del final" — se toca a lo largo de todo el desarrollo.
+This is the **continuous integration point** of the system. It exists from iteration 1 as a minimal IntelliJ Platform shell that bundles the first plugin, and grows as the rest of the system appears. It is not an "end-stage" module — it is touched throughout development.
 
-Lo que crece en este módulo iteración por iteración:
+What grows in this module iteration by iteration:
 
-- **Inicio:** configuración mínima de IntelliJ Platform SDK (tipo IDE custom, versión de plataforma, plugin code/version interno), sin branding ni assets cosméticos. Bundlea `plugin-bbk`.
-- **Cuando aparece `plugin-rpg`:** se agrega al bundling.
-- **Cuando aparece `bbk-interpreter`:** se cablea una acción "Run interpreted" que invoca al intérprete.
-- **Cuando aparece `bbk-runtime`:** se incluye en el classpath para que el intérprete resuelva primitivas.
-- **Cuando aparece `bbk-compiler`:** se cablea una acción "Compile to native".
-- **A lo largo del desarrollo:** asociaciones de file type (`.rpg`, `.bbk`), tool windows (consola de runtime, log de compilación), run configurations, settings UI, integración debugger.
-- **Mucho más tarde (fase de distribución):** branding (nombre comercial, splash, icono), build/sign/installer.
+- **Start:** minimal IntelliJ Platform SDK configuration (custom IDE type, platform version, internal plugin code/version), no branding or cosmetic assets. Bundles `plugin-bbk`.
+- **When `plugin-rpg` appears:** added to the bundling.
+- **When `bbk-interpreter` appears:** a "Run interpreted" action is wired in to invoke the interpreter.
+- **When `bbk-runtime` appears:** included in the classpath so the interpreter can resolve primitives.
+- **When `bbk-compiler` appears:** a "Compile to native" action is wired in.
+- **Throughout development:** file type associations (`.rpg`, `.bbk`), tool windows (runtime console, compilation log), run configurations, settings UI, debugger integration.
+- **Much later (distribution phase):** branding (commercial name, splash, icon), build/sign/installer.
 
-Es lo último que cobra branding pero lo primero que existe como cáscara runnable. El harness de desarrollo de todo el proyecto es `./gradlew :boxbreaker-ide:runIde`.
+It is the last thing to receive branding but the first thing to exist as a runnable shell. The development harness for the whole project is `./gradlew :boxbreaker-ide:runIde`.
 
-**Depende de** todos los plugins y módulos de runtime. Usa `gradle-intellij-plugin` con configuración de IDE custom.
+**Depends on** every plugin and runtime module. Uses `gradle-intellij-plugin` with custom IDE configuration.
 
-**Lenguaje:** Kotlin para configuración; en su mayoría es Gradle + recursos.
-
----
-
-## Propiedades del diseño
-
-**Headless-first.** El núcleo del compilador (`bbk-core`, `rpg-frontend`, `bbk-compiler`, `bbk-interpreter`, `bbk-runtime`) no depende de IntelliJ. Se puede compilar y ejecutar RPG desde CLI, CI/CD, o scripts batch sin instalar ningún IDE.
-
-**Plugins reutilizables en IntelliJ Community.** Los plugins `plugin-bbk` y `plugin-rpg` no dependen del IDE custom. Se pueden publicar en JetBrains Marketplace e instalar en IntelliJ Community estándar, donde proveen tooling de editor (pero no ejecución, eso requiere BoxBreaker IDE o la CLI).
-
-**El IDE custom es el punto de integración continua.** `boxbreaker-ide` existe desde la iteración 1 como cáscara mínima de IntelliJ Platform y bundlea el primer plugin. A medida que aparecen plugins, módulos de runtime y entry points de ejecución, se cosen dentro de este módulo. El loop de desarrollo del proyecto entero es `runIde` sobre `boxbreaker-ide`, lo que garantiza que el contrato de bundling se valida desde el primer día (no aparecen sorpresas de integración tarde). El branding/distribución es la última capa que se agrega encima, no la primera.
-
-**Dos modos de ejecución compartiendo IR.** Intérprete y compilador AOT consumen el mismo `bbk-core` y el mismo `bbk-runtime`. La diferencia está en cómo recorren el AST/IR — interpretándolo o lowereándolo a C.
+**Language:** Kotlin for configuration; mostly Gradle + resources.
 
 ---
 
-## Dependencias entre módulos
+## Design properties
+
+**Headless-first.** The compiler core (`bbk-core`, `rpg-frontend`, `bbk-compiler`, `bbk-interpreter`, `bbk-runtime`) does not depend on IntelliJ. RPG can be compiled and run from the CLI, CI/CD, or batch scripts without installing any IDE.
+
+**Plugins reusable on IntelliJ Community.** The `plugin-bbk` and `plugin-rpg` plugins do not depend on the custom IDE. They can be published on the JetBrains Marketplace and installed on stock IntelliJ Community, where they provide editor tooling (but not execution — that requires BoxBreaker IDE or the CLI).
+
+**The custom IDE is the continuous integration point.** `boxbreaker-ide` exists from iteration 1 as a minimal IntelliJ Platform shell bundling the first plugin. As plugins, runtime modules and execution entry points appear, they are sewn into this module. The development loop for the entire project is `runIde` over `boxbreaker-ide`, which guarantees that the bundling contract is validated from day one (no late integration surprises). Branding/distribution is the last layer added on top, not the first.
+
+**Two execution modes sharing the IR.** Interpreter and AOT compiler consume the same `bbk-core` and the same `bbk-runtime`. The difference is how they walk the AST/IR — interpreting it or lowering it to C.
+
+---
+
+## Module dependencies
 
 ```
 boxbreaker-ide
@@ -206,17 +206,17 @@ boxbreaker-ide
     └── bbk-runtime
 ```
 
-Reglas:
-- `bbk-core` no depende de nadie.
-- `bbk-runtime` no depende de nadie (o solo de `bbk-core` para tipos).
-- Los plugins dependen de `bbk-core` / `rpg-frontend` pero **no** de los módulos de ejecución.
-- `boxbreaker-ide` es el único módulo que conoce a todos.
+Rules:
+- `bbk-core` depends on no one.
+- `bbk-runtime` depends on no one (or only on `bbk-core` for shared types).
+- Plugins depend on `bbk-core` / `rpg-frontend` but **not** on the execution modules.
+- `boxbreaker-ide` is the only module that knows them all.
 
 ---
 
-## Decisiones pendientes
+## Pending decisions
 
-- **Nombre del repo** (en `compilador-rpg-bbk-setup.md` quedó pendiente).
-- **Lenguaje de `bbk-runtime`**: Java (más simple, depende de JVM) vs C (linkeo nativo, sin JVM en runtime).
-- **Lenguaje de `bbk-core`**: Java o Kotlin. Si todos los plugins son Kotlin y la mayoría del compilador también, Kotlin gana coherencia.
-- **Estrategia de tests E2E**: cómo se valida que el intérprete y el binario AOT producen el mismo output para un mismo RPG.
+- **Repo name** (still open in `compilador-rpg-bbk-setup.md`).
+- **`bbk-runtime` language**: Java (simpler, JVM-dependent) vs C (native linking, no JVM at runtime).
+- **`bbk-core` language**: Java or Kotlin. If all plugins are Kotlin and most of the compiler too, Kotlin wins on consistency.
+- **E2E test strategy**: how to validate that the interpreter and the AOT binary produce the same output for the same RPG.

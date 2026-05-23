@@ -1,104 +1,104 @@
 # BoxBreaker
 
-> **RPG → C.** Toolchain para compilar y ejecutar programas RPG (IBM i / AS/400) en Windows y Linux, mediante un lenguaje intermedio propio llamado **BBK (BoxBreaker)**.
+> **RPG → C.** Toolchain to compile and run RPG programs (IBM i / AS/400) on Windows and Linux through a custom intermediate language called **BBK (BoxBreaker)**.
 
 **Repo:** [github.com/NicLarUniversidad/rpg-bbk-compiler](https://github.com/NicLarUniversidad/rpg-bbk-compiler)
-**Estado:** alpha — diseño inicial, en desarrollo activo.
+**Status:** alpha — initial design, active development.
 
 ---
 
-## Por qué
+## Why
 
-Las bases de código RPG están atadas al hardware IBM i para desarrollo, build y testing. Este toolchain desacopla el ciclo de desarrollo del hardware IBM, permitiendo iterar localmente en Windows o Linux preservando la semántica de RPG mediante BBK y una capa de runtime que emula las primitivas faltantes.
+RPG codebases are tied to IBM i hardware for development, build, and testing. This toolchain decouples the development cycle from IBM hardware, allowing local iteration on Windows or Linux while preserving RPG semantics through BBK and a runtime layer that emulates the missing primitives.
 
 ---
 
 ## Pipeline
 
 ```
-RPG  ──▶  rpg-frontend  ──▶  BBK (IR)  ──┬──▶  intérprete  ──▶  ejecución
+RPG  ──▶  rpg-frontend  ──▶  BBK (IR)  ──┬──▶  interpreter  ──▶  execution
                                          │
-                                         └──▶  C  ──▶  gcc  ──▶  binario nativo
+                                         └──▶  C  ──▶  gcc  ──▶  native binary
 ```
 
-Dos modos de ejecución sobre el mismo IR:
+Two execution modes over the same IR:
 
-- **Intérprete BBK** — ciclo rápido para desarrollo y debugging.
-- **AOT a nativo** — BBK → C → gcc → binario para producción.
+- **BBK interpreter** — fast cycle for development and debugging.
+- **AOT to native** — BBK → C → gcc → binary for production.
 
-Ambos modos comparten el runtime de emulación IBM i.
+Both modes share the IBM i emulation runtime.
 
 ---
 
-## Módulos
+## Modules
 
-El repo es un monorepo Gradle multi-project. Ver [`docs/architecture.md`](docs/architecture.md) para el detalle completo.
+The repo is a Gradle multi-project monorepo. See [`docs/architecture.md`](docs/architecture.md) for full detail.
 
-| Módulo | Tipo | Rol |
+| Module | Type | Role |
 |---|---|---|
-| `bbk-core` | lib | AST, IR y semántica de BBK |
-| `rpg-frontend` | lib | Lexer + parser RPG, traducción RPG → BBK |
-| `bbk-interpreter` | app | Intérprete BBK (modo dev) |
-| `bbk-compiler` | app | Lowering BBK → C + invoca gcc (modo AOT) |
-| `bbk-runtime` | lib | Emulación de primitivas IBM i (job queues, DDS, library lists, etc.) |
-| `plugin-bbk` | plugin | Soporte de lenguaje BBK en IntelliJ |
-| `plugin-rpg` | plugin | Soporte de lenguaje RPG + comando "traducir a BBK" |
-| `boxbreaker-ide` | IDE | Distribución de IDE customizado sobre IntelliJ Platform SDK |
+| `bbk-core` | lib | BBK AST, IR, and semantics |
+| `rpg-frontend` | lib | RPG lexer + parser, RPG → BBK translation |
+| `bbk-interpreter` | app | BBK interpreter (dev mode) |
+| `bbk-compiler` | app | BBK → C lowering + gcc invocation (AOT mode) |
+| `bbk-runtime` | lib | IBM i primitives emulation (job queues, DDS, library lists, etc.) |
+| `plugin-bbk` | plugin | BBK language support in IntelliJ |
+| `plugin-rpg` | plugin | RPG language support + "translate to BBK" command |
+| `boxbreaker-ide` | IDE | Customized IDE distribution on top of IntelliJ Platform SDK |
 
-**Capas:**
+**Layers:**
 
-- **Núcleo headless** (`bbk-core`, `rpg-frontend`, `bbk-interpreter`, `bbk-compiler`, `bbk-runtime`) — no depende de IntelliJ. Compilá y ejecutá desde CLI o CI sin instalar ningún IDE.
-- **Plugins IntelliJ** (`plugin-bbk`, `plugin-rpg`) — instalables en IntelliJ Community estándar. Proveen tooling de editor (highlighting, autocomplete, navegación) sin runtime.
-- **BoxBreaker IDE** (`boxbreaker-ide`) — distribución completa: plugins + runtime + branding. Es el "shrinkwrap" del producto.
+- **Headless core** (`bbk-core`, `rpg-frontend`, `bbk-interpreter`, `bbk-compiler`, `bbk-runtime`) — no IntelliJ dependency. Compile and run from CLI or CI without installing any IDE.
+- **IntelliJ plugins** (`plugin-bbk`, `plugin-rpg`) — installable on stock IntelliJ Community. Provide editor tooling (highlighting, autocomplete, navigation) without the runtime.
+- **BoxBreaker IDE** (`boxbreaker-ide`) — full distribution: plugins + runtime + branding. The product's "shrinkwrap".
 
 ---
 
 ## Quick start
 
-> El build todavía no está implementado. Esta sección es una proyección de la UX final.
+> The build is not yet implemented. This section is a projection of the final UX.
 
 ```bash
-# Build de todo el monorepo
+# Build the entire monorepo
 ./gradlew build
 
-# Ejecutar un RPG en modo intérprete (rápido)
+# Run an RPG in interpreter mode (fast)
 ./gradlew :bbk-interpreter:run --args="examples/hello-world/hello.rpg"
 
-# Compilar un RPG a binario nativo (AOT)
+# Compile an RPG to a native binary (AOT)
 ./gradlew :bbk-compiler:run --args="examples/hello-world/hello.rpg --output dist/hello.exe"
 ./dist/hello.exe
 
-# Levantar BoxBreaker IDE en modo desarrollo
+# Launch BoxBreaker IDE in development mode
 ./gradlew :boxbreaker-ide:runIde
 ```
 
 ---
 
-## Arquitectura
+## Architecture
 
-Documento principal: [`docs/architecture.md`](docs/architecture.md).
+Main document: [`docs/architecture.md`](docs/architecture.md).
 
-Spec del lenguaje BBK: `docs/bbk-spec.md` (pendiente).
+BBK language spec: `docs/bbk-spec.md` (pending).
 
 ---
 
 ## Stack
 
-- **Java + Kotlin** — núcleo del compilador y plugins
+- **Java + Kotlin** — compiler core and plugins
 - **Gradle (Kotlin DSL) multi-project** — build
-- **ANTLR4** — gramática de RPG
-- **IntelliJ Platform SDK** + `gradle-intellij-plugin` — plugins e IDE
-- **C99 + gcc** — backend del compilador AOT
+- **ANTLR4** — RPG grammar
+- **IntelliJ Platform SDK** + `gradle-intellij-plugin` — plugins and IDE
+- **C99 + gcc** — AOT compiler backend
 - **JUnit 5** — tests
 
 ---
 
-## Estado y roadmap
+## Status and roadmap
 
-Trabajo en curso, pendiente y roadmap a largo plazo en [`TODO.md`](TODO.md).
+Work in progress, pending items, and long-term roadmap in [`TODO.md`](TODO.md).
 
 ---
 
-## Licencia
+## License
 
-MIT — ver [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](LICENSE).

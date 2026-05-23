@@ -1,30 +1,30 @@
-# Similitudes entre RPG y C
+# Similarities between RPG and C
 
-**Propósito:** identificar constructos que se traducen casi 1:1 entre RPG y C99. El `bbk-compiler` los puede emitir de forma directa en el lowering BBK → C, sin necesidad de biblioteca de runtime adicional ni cambios semánticos.
+**Purpose:** identify constructs that translate almost 1:1 between RPG and C99. The `bbk-compiler` can emit them directly during BBK → C lowering, with no additional runtime library or semantic changes needed.
 
-Documentos relacionados:
-- [`translatable.md`](translatable.md) — distinto pero traducible con mapeo explícito
-- [`runtime-required.md`](runtime-required.md) — no traducible solo; requiere runtime
+Related documents:
+- [`translatable.md`](translatable.md) — different but translatable with explicit mapping
+- [`runtime-required.md`](runtime-required.md) — not translatable on its own; requires runtime
 
 ---
 
-## 1. Operadores aritméticos
+## 1. Arithmetic operators
 
-| RPG | C | Notas |
+| RPG | C | Notes |
 |---|---|---|
-| `+` | `+` | Suma |
-| `-` | `-` | Resta (binaria y unaria) |
-| `*` | `*` | Multiplicación |
-| `/` | `/` | División (semántica difiere según tipo — ver translatable) |
-| `**` | `pow(a, b)` | Exponenciación. C no tiene operador, requiere `<math.h>`. Mapeo trivial. |
-| `+` unario | `+` unario | Idéntico |
-| `-` unario | `-` unario | Idéntico |
+| `+` | `+` | Addition |
+| `-` | `-` | Subtraction (binary and unary) |
+| `*` | `*` | Multiplication |
+| `/` | `/` | Division (semantics differ by type — see translatable) |
+| `**` | `pow(a, b)` | Exponentiation. C has no operator; requires `<math.h>`. Trivial mapping. |
+| unary `+` | unary `+` | Identical |
+| unary `-` | unary `-` | Identical |
 
-**Asociatividad y precedencia:** equivalentes para tipos numéricos básicos. `**` en RPG es right-associative igual que `pow()` anidado en C.
+**Associativity and precedence:** equivalent for basic numeric types. `**` in RPG is right-associative, same as nested `pow()` in C.
 
 ---
 
-## 2. Operadores relacionales
+## 2. Relational operators
 
 | RPG | C |
 |---|---|
@@ -35,11 +35,11 @@ Documentos relacionados:
 | `<=` | `<=` |
 | `>=` | `>=` |
 
-**Único cambio:** `=` en RPG es comparación; en C es asignación. El frontend tiene que distinguir por contexto (en RPG el contexto sintáctico lo deja claro porque la asignación es por `EVAL` o por statement `<lvalue> = <expr>`).
+**Only change:** `=` in RPG is comparison; in C it's assignment. The frontend has to distinguish by context (in RPG the syntactic context makes it clear because assignment is via `EVAL` or via an `<lvalue> = <expr>` statement).
 
 ---
 
-## 3. Operadores lógicos
+## 3. Logical operators
 
 | RPG | C |
 |---|---|
@@ -47,11 +47,11 @@ Documentos relacionados:
 | `OR` | `\|\|` |
 | `NOT` | `!` |
 
-**Short-circuit evaluation:** ambos lenguajes la implementan igual para `AND`/`&&` y `OR`/`||`.
+**Short-circuit evaluation:** both languages implement it the same way for `AND`/`&&` and `OR`/`||`.
 
 ---
 
-## 4. Estructuras de control
+## 4. Control structures
 
 ### 4.1 If / Else
 
@@ -75,7 +75,7 @@ if (<cond>) {
 }
 ```
 
-Mapeo 1:1. `ELSEIF` se vuelve `else if`.
+1:1 mapping. `ELSEIF` becomes `else if`.
 
 ### 4.2 FOR
 
@@ -91,7 +91,7 @@ for (int i = 1; i <= 10; i++) {
 }
 ```
 
-Con `BY n`:
+With `BY n`:
 
 ```rpg
 FOR i = 0 TO 100 BY 5;
@@ -101,7 +101,7 @@ FOR i = 0 TO 100 BY 5;
 for (int i = 0; i <= 100; i += 5) {
 ```
 
-Con `DOWNTO`:
+With `DOWNTO`:
 
 ```rpg
 FOR i = 10 DOWNTO 1;
@@ -111,7 +111,7 @@ FOR i = 10 DOWNTO 1;
 for (int i = 10; i >= 1; i--) {
 ```
 
-**Caveat:** RPG indexa desde 1 por convención cultural pero el `FOR` no impone esto. Los arrays sí lo hacen (ver translatable).
+**Caveat:** RPG indexes from 1 by cultural convention but `FOR` does not enforce this. Arrays do (see translatable).
 
 ### 4.3 DOW (do while — pre-test)
 
@@ -141,7 +141,7 @@ do {
 } while (!(<cond>));
 ```
 
-Atención: `DOU` continúa **hasta** que la condición sea verdadera (termina cuando es true). `do { } while` continúa **mientras** la condición sea verdadera. Por eso el `!` en la traducción.
+Heads up: `DOU` continues **until** the condition is true (it terminates when true). `do { } while` continues **while** the condition is true. Hence the `!` in the translation.
 
 ### 4.5 LEAVE / ITER
 
@@ -164,9 +164,9 @@ return expr;
 
 ---
 
-## 5. Tipos numéricos básicos
+## 5. Basic numeric types
 
-Algunos tipos numéricos de RPG mapean directo a tipos C estándar:
+Some RPG numeric types map directly to standard C types:
 
 | RPG | C |
 |---|---|
@@ -181,15 +181,15 @@ Algunos tipos numéricos de RPG mapean directo a tipos C estándar:
 | `FLOAT(4)` | `float` |
 | `FLOAT(8)` | `double` |
 
-**Disponibles vía `<stdint.h>`** (C99). El lowering puede emitir estos tipos directamente.
+**Available via `<stdint.h>`** (C99). The lowering can emit these types directly.
 
-**Caveat:** los tipos `PACKED`, `ZONED`, `BINDEC` **NO** mapean directo — son decimales exactos. Van en [`translatable.md`](translatable.md).
+**Caveat:** the `PACKED`, `ZONED`, `BINDEC` types do **NOT** map directly — they are exact decimals. They go in [`translatable.md`](translatable.md).
 
 ---
 
-## 6. Procedures y funciones
+## 6. Procedures and functions
 
-### 6.1 Sub-procedure con retorno
+### 6.1 Sub-procedure with return
 
 ```rpg
 DCL-PROC sumar EXPORT;
@@ -208,7 +208,7 @@ int32_t sumar(int32_t a, int32_t b) {
 }
 ```
 
-### 6.2 Sub-procedure sin retorno
+### 6.2 Sub-procedure without return
 
 ```rpg
 DCL-PROC saludar;
@@ -224,15 +224,15 @@ static void saludar(void) {
 }
 ```
 
-(Sin `EXPORT` → `static` en C.)
+(No `EXPORT` → `static` in C.)
 
-### 6.3 Parámetros
+### 6.3 Parameters
 
 | RPG | C |
 |---|---|
-| `VALUE` | parámetro por valor (default en C) |
-| sin `VALUE` (por referencia) | puntero (`T *`) |
-| `CONST` | `const T` o `const T *` |
+| `VALUE` | parameter by value (default in C) |
+| no `VALUE` (by reference) | pointer (`T *`) |
+| `CONST` | `const T` or `const T *` |
 
 ```rpg
 DCL-PI proc;
@@ -248,9 +248,9 @@ void proc(int32_t x, int32_t *y, const int32_t *z) {
 
 ---
 
-## 7. Constantes
+## 7. Constants
 
-### 7.1 Constantes literales
+### 7.1 Literal constants
 
 ```rpg
 DCL-C MAX_LEN 100;
@@ -264,25 +264,25 @@ DCL-C SALUDO 'Hola';
 static const char SALUDO[] = "Hola";
 ```
 
-O con `const` de C:
+Or with C's `const`:
 
 ```c
 static const int32_t MAX_LEN = 100;
 static const double PI = 3.14159;
 ```
 
-(Mapeo a `#define` vs `const` es decisión de estilo. `const` es más type-safe.)
+(Mapping to `#define` vs `const` is a style decision. `const` is more type-safe.)
 
-### 7.2 Figurative constants traducibles directo
+### 7.2 Directly translatable figurative constants
 
 | RPG | C |
 |---|---|
-| `*ON` | `1` (o `true` con `<stdbool.h>`) |
-| `*OFF` | `0` (o `false`) |
+| `*ON` | `1` (or `true` with `<stdbool.h>`) |
+| `*OFF` | `0` (or `false`) |
 | `*ZERO` / `*ZEROS` | `0` |
 | `*NULL` | `NULL` |
 
-(Otras figurative constants como `*BLANK`, `*HIVAL`, `*LOVAL` dependen del tipo del destino — van en translatable.)
+(Other figurative constants like `*BLANK`, `*HIVAL`, `*LOVAL` depend on the target's type — they go in translatable.)
 
 ---
 
@@ -290,92 +290,92 @@ static const double PI = 3.14159;
 
 | RPG | C |
 |---|---|
-| `STATIC` (en variable local) | `static` |
-| Variable global de módulo | `static` (file-scope) por default; `extern` si `EXPORT` |
-| `EXPORT` | (sin `static`) — visible al linker |
+| `STATIC` (on a local variable) | `static` |
+| Module-global variable | `static` (file-scope) by default; `extern` if `EXPORT` |
+| `EXPORT` | (no `static`) — visible to the linker |
 | `IMPORT` | `extern` |
-| Variable local (default `AUTOMATIC`) | variable local C |
+| Local variable (default `AUTOMATIC`) | C local variable |
 
 ---
 
-## 9. Identificadores
+## 9. Identifiers
 
-Reglas léxicas similares: empiezan con letra, después letras/dígitos/`_`. RPG agrega `#`, `$`, `@` por compatibilidad EBCDIC. El frontend los puede transliterar a `_` para C.
+Similar lexical rules: start with a letter, then letters/digits/`_`. RPG adds `#`, `$`, `@` for EBCDIC compatibility. The frontend can transliterate them to `_` for C.
 
-**Única diferencia material:** RPG es **case-insensitive**. La normalización a un canon (típicamente lowercase o uppercase) se hace en el frontend. Después la emisión a C es trivial.
+**Only material difference:** RPG is **case-insensitive**. Normalization to a canonical form (typically lowercase or uppercase) is done in the frontend. After that, C emission is trivial.
 
 ---
 
-## 10. Comentarios
+## 10. Comments
 
 | RPG | C |
 |---|---|
-| `// comentario hasta fin de línea` | `// comentario hasta fin de línea` (C99) |
-| `/* ... */` (no estándar en RPG, pero algunos editores aceptan) | `/* ... */` |
+| `// comment to end of line` | `// comment to end of line` (C99) |
+| `/* ... */` (not standard in RPG, but some editors accept it) | `/* ... */` |
 
-Mapeo directo.
+Direct mapping.
 
 ---
 
-## 11. Punteros (semántica básica)
+## 11. Pointers (basic semantics)
 
 ```rpg
 DCL-S p POINTER;
 DCL-S x INT(10) BASED(p);
 
 p = %ADDR(otroVar);
-x = 42;                    // escribe en *p tratado como int32_t
+x = 42;                    // writes to *p treated as int32_t
 ```
 
 ```c
 void *p;
-int32_t *x_p;              // p tipado al uso
+int32_t *x_p;              // p typed at point of use
 
 p = &otroVar;
 x_p = (int32_t *)p;
 *x_p = 42;
 ```
 
-**Limitación del mapeo:** RPG con `BASED` permite re-aliasing dinámico que en C requiere casts explícitos. La aritmética de punteros básica (sumar offsets) es similar.
+**Mapping limitation:** RPG with `BASED` allows dynamic re-aliasing that C requires explicit casts for. Basic pointer arithmetic (adding offsets) is similar.
 
 ---
 
-## 12. Sequence points en expresiones
+## 12. Sequence points in expressions
 
-C99 define sequence points en `&&`, `||`, `?:`, `,`, fin de full expression, y llamadas a función.
+C99 defines sequence points at `&&`, `||`, `?:`, `,`, end of full expression, and function calls.
 
-RPG no usa la terminología pero su comportamiento de evaluación de expresiones coincide en los puntos prácticos: `AND`/`OR` con short-circuit, evaluación left-to-right en general. Las expresiones simples sin efectos colaterales (RPG no tiene `++`/`--` ni asignaciones embebidas en expresiones) evitan los undefined behaviors típicos de C.
+RPG doesn't use the terminology, but its expression-evaluation behavior coincides at the practical points: `AND`/`OR` with short-circuit, generally left-to-right evaluation. RPG's simple expressions without side effects (RPG has no `++`/`--` and no assignments embedded in expressions) avoid the typical C undefined behaviors.
 
-**Ventaja para el lowering:** las expresiones RPG son más restrictivas que las de C, así que generar C correcto desde ellas es más fácil que el camino inverso.
+**Advantage for lowering:** RPG expressions are more restrictive than C's, so generating correct C from them is easier than the reverse direction.
 
 ---
 
-## 13. Modularidad
+## 13. Modularity
 
 | RPG | C |
 |---|---|
-| Módulo (`*MODULE`) | Translation unit (`.c` + headers) |
-| Programa (`*PGM`) — bindea uno o más módulos | Ejecutable (`.exe`) — linkea uno o más `.o` |
-| Service program (`*SRVPGM`) — bindea módulos para uso compartido | Shared library (`.dll` / `.so`) — linkea módulos compartibles |
-| Main procedure | `int main(void)` o `int main(int argc, char *argv[])` |
+| Module (`*MODULE`) | Translation unit (`.c` + headers) |
+| Program (`*PGM`) — binds one or more modules | Executable (`.exe`) — links one or more `.o` |
+| Service program (`*SRVPGM`) — binds modules for shared use | Shared library (`.dll` / `.so`) — links shareable modules |
+| Main procedure | `int main(void)` or `int main(int argc, char *argv[])` |
 
-**Caveat:** la relación `*PGM` ↔ `*MODULE` ↔ `*SRVPGM` con activation groups tiene complejidades semánticas que no mapean limpiamente. La estructura **de archivos** sí.
+**Caveat:** the `*PGM` ↔ `*MODULE` ↔ `*SRVPGM` relationship with activation groups has semantic complexities that do not map cleanly. The **file** structure does.
 
 ---
 
-## Resumen
+## Summary
 
-Lo que mapea directo entre RPG y C99:
+What maps directly between RPG and C99:
 
-- **Sintaxis de expresiones:** operadores aritméticos, relacionales, lógicos.
-- **Sintaxis de control:** `IF`/`FOR`/`DOW`/`DOU`/`LEAVE`/`ITER`/`RETURN`.
-- **Tipos numéricos enteros y flotantes** (`INT`, `UNS`, `FLOAT`).
-- **Procedures con parámetros y retorno.**
+- **Expression syntax:** arithmetic, relational, logical operators.
+- **Control syntax:** `IF`/`FOR`/`DOW`/`DOU`/`LEAVE`/`ITER`/`RETURN`.
+- **Integer and floating-point numeric types** (`INT`, `UNS`, `FLOAT`).
+- **Procedures with parameters and return.**
 - **Storage classes** (`STATIC`, `EXPORT`).
-- **Constantes literales** (`DCL-C`).
-- **Identificadores** (modulo case y caracteres especiales).
-- **Comentarios.**
-- **Punteros básicos.**
-- **Modularidad a nivel de archivos** (módulo, programa, srvpgm).
+- **Literal constants** (`DCL-C`).
+- **Identifiers** (modulo case and special characters).
+- **Comments.**
+- **Basic pointers.**
+- **File-level modularity** (module, program, srvpgm).
 
-Para el `bbk-compiler` este conjunto es la parte fácil del lowering: emite código C estándar sin necesidad de la biblioteca `bbk-runtime`.
+For the `bbk-compiler`, this set is the easy part of the lowering: it emits standard C without needing the `bbk-runtime` library.

@@ -1,31 +1,31 @@
 # BBK Grammar — Layer 2
 
-**Estado:** implementada y verificada
-**Fuente del parser:** [`plugin-bbk/src/main/grammar/BBK.bnf`](../../../plugin-bbk/src/main/grammar/BBK.bnf)
-**Pre-requisito:** [`layer1.md`](layer1.md)
-**Archivos de prueba:** [`tests/boxbreaker/examples/`](../../../tests/boxbreaker/examples/) (válidos) y [`bad-09`](../../../tests/boxbreaker/examples/bad/bad-09-bad-ctl-opt.bbk), [`bad-10`](../../../tests/boxbreaker/examples/bad/bad-10-bad-file-decl.bbk), [`bad-11`](../../../tests/boxbreaker/examples/bad/bad-11-bad-data-structures.bbk) (errores intencionales)
+**Status:** implemented and verified
+**Parser source:** [`plugin-bbk/src/main/grammar/BBK.bnf`](../../../plugin-bbk/src/main/grammar/BBK.bnf)
+**Prerequisite:** [`layer1.md`](layer1.md)
+**Test files:** [`tests/boxbreaker/examples/`](../../../tests/boxbreaker/examples/) (valid) and [`bad-09`](../../../tests/boxbreaker/examples/bad/bad-09-bad-ctl-opt.bbk), [`bad-10`](../../../tests/boxbreaker/examples/bad/bad-10-bad-file-decl.bbk), [`bad-11`](../../../tests/boxbreaker/examples/bad/bad-11-bad-data-structures.bbk) (intentional errors)
 
 ---
 
-## Alcance
+## Scope
 
-Layer 2 completa el conjunto de **declaraciones a nivel módulo** sin entrar todavía a procedures, statements ni expresiones. Agrega tres construcciones:
+Layer 2 completes the set of **module-level declarations** without yet entering procedures, statements or expressions. It adds three constructs:
 
-| Construcción | Forma | Ejemplo |
+| Construct | Form | Example |
 |---|---|---|
-| `CTL-OPT` | Directiva de módulo | `CTL-OPT MAIN(helloMain) NOMAIN DEBUG;` |
-| `DCL-F` | Declaración de archivo | `DCL-F customers DISK USAGE(*INPUT) KEYED EXTNAME("CUSTOMER");` |
+| `CTL-OPT` | Module directive | `CTL-OPT MAIN(helloMain) NOMAIN DEBUG;` |
+| `DCL-F` | File declaration | `DCL-F customers DISK USAGE(*INPUT) KEYED EXTNAME("CUSTOMER");` |
 | `DCL-DS` | Data structure | `DCL-DS person QUALIFIED { id INT(10); name CHAR(50); }` |
 
-**Novedad clave:** introduce la sintaxis de **bloques con `{ }`** vía `DCL-DS { subfield; subfield; }`. Este patrón se reusará en Layers posteriores (`DCL-PROC { body }`, `if (cond) { ... }`, etc.).
+**Key novelty:** introduces the **`{ }` block syntax** through `DCL-DS { subfield; subfield; }`. This pattern is reused in later layers (`DCL-PROC { body }`, `if (cond) { ... }`, etc.).
 
-**Lo que sigue sin cubrirse:**
+**Still not covered:**
 - `DCL-PR`, `DCL-PROC` — Layer 3
-- Statements, expressions, file ops, directivas `PRE-*` — Layers 4-6
+- Statements, expressions, file ops, `PRE-*` directives — Layers 4-6
 
 ---
 
-## Top-level actualizado
+## Updated top-level
 
 ```bnf
 top_level_item ::= variable_declaration       // L1
@@ -38,7 +38,7 @@ top_level_item ::= variable_declaration       // L1
 
 ---
 
-## Producciones BNF
+## BNF productions
 
 ### CTL-OPT statement
 
@@ -52,17 +52,17 @@ ctl_opt_args ::= LPAREN ctl_opt_arg (COLON ctl_opt_arg)* RPAREN {pin=1}
 private ctl_opt_arg ::= literal | KW_TRUE | KW_FALSE | KW_NULL | STAR_IDENT | IDENT
 ```
 
-**Forma:** `CTL-OPT keyword keyword(arg) keyword(a:b:c) ... ;`
+**Form:** `CTL-OPT keyword keyword(arg) keyword(a:b:c) ... ;`
 
-Los keywords (`MAIN`, `NOMAIN`, `DFTACTGRP`, `DEBUG`, etc.) **no son tokens dedicados** — se parsean como `IDENT` y la semántica se interpreta a nivel posterior. Esto evita explotar la lista de tokens con cada opción de IBM.
+Keywords (`MAIN`, `NOMAIN`, `DFTACTGRP`, `DEBUG`, etc.) are **not dedicated tokens** — they are parsed as `IDENT` and the semantics are interpreted at a later stage. This prevents the token list from exploding with every IBM option.
 
-**Argumentos aceptados:**
-- Literales (`INT_LIT`, `STR_LIT`, etc.)
+**Accepted arguments:**
+- Literals (`INT_LIT`, `STR_LIT`, etc.)
 - `true` / `false` / `null`
-- `STAR_IDENT` (ej. `*NO`, `*NEW`, `*CALLER`)
-- `IDENT` (ej. nombres de procedures, librerías)
+- `STAR_IDENT` (e.g. `*NO`, `*NEW`, `*CALLER`)
+- `IDENT` (e.g. procedure names, library names)
 
-Multi-args van separados por `:` (no por `,`): `OPTION(*SRCSTMT:*NODEBUGIO)`.
+Multi-args are separated by `:` (not `,`): `OPTION(*SRCSTMT:*NODEBUGIO)`.
 
 ### File declaration
 
@@ -88,18 +88,18 @@ indds_f_keyword   ::= KW_INDDS   LPAREN IDENT RPAREN {pin=1}
 infds_f_keyword   ::= KW_INFDS   LPAREN IDENT RPAREN {pin=1}
 ```
 
-**Forma:** `DCL-F filename keyword keyword(args) ... ;`
+**Form:** `DCL-F filename keyword keyword(args) ... ;`
 
-A diferencia de `CTL-OPT`, los keywords de DCL-F **sí son tokens dedicados** (`KW_USAGE`, `KW_EXTNAME`, etc.) porque cada uno tiene gramática propia para sus argumentos. Esto da error reporting más preciso.
+Unlike `CTL-OPT`, the DCL-F keywords **are dedicated tokens** (`KW_USAGE`, `KW_EXTNAME`, etc.) because each has its own grammar for its arguments. This yields more precise error reporting.
 
-**Restricciones de tipo en argumentos:**
-- `USAGE(*X:*Y:...)` — solo `STAR_IDENT`, no `IDENT`
-- `EXTNAME("file")` / `EXTFILE("file")` — solo `STR_LIT`
-- `PREFIX(prefix:n)` — `IDENT` opcionalmente seguido de `:INT_LIT`
-- `RENAME(old:new)` — dos `IDENT` separados por `:`
-- `INDDS(name)` / `INFDS(name)` — un `IDENT`
+**Argument type restrictions:**
+- `USAGE(*X:*Y:...)` — only `STAR_IDENT`, not `IDENT`
+- `EXTNAME("file")` / `EXTFILE("file")` — only `STR_LIT`
+- `PREFIX(prefix:n)` — `IDENT` optionally followed by `:INT_LIT`
+- `RENAME(old:new)` — two `IDENT`s separated by `:`
+- `INDDS(name)` / `INFDS(name)` — a single `IDENT`
 
-`f_keyword+` (uno o más) — un `DCL-F` siempre necesita al menos un keyword. `DCL-F customers;` da error.
+`f_keyword+` (one or more) — a `DCL-F` always needs at least one keyword. `DCL-F customers;` raises an error.
 
 ### Data structure declaration
 
@@ -113,9 +113,9 @@ ds_body ::= LBRACE ds_subfield* RBRACE {pin=1}
 ds_subfield ::= IDENT type_specification var_modifier* SEMI {pin=1}
 ```
 
-**Dos formas:**
+**Two forms:**
 
-1. **Inline con body** — declara la estructura con sus subfields:
+1. **Inline with body** — declares the structure with its subfields:
    ```bbk
    DCL-DS person QUALIFIED {
      id     INT(10);
@@ -124,7 +124,7 @@ ds_subfield ::= IDENT type_specification var_modifier* SEMI {pin=1}
    }
    ```
 
-2. **Sin body, solo `;`** — usado con `LIKEDS` o `TEMPLATE` para reusar estructuras:
+2. **No body, just `;`** — used with `LIKEDS` or `TEMPLATE` to reuse structures:
    ```bbk
    DCL-DS homeAddress LIKEDS(addressTemplate);
    DCL-DS customerRec EXTNAME("CUSTOMER") QUALIFIED;
@@ -133,12 +133,12 @@ ds_subfield ::= IDENT type_specification var_modifier* SEMI {pin=1}
 ### DS modifiers
 
 ```bnf
-ds_modifier ::= qualified_modifier      // reusado de var_modifier
+ds_modifier ::= qualified_modifier      // reused from var_modifier
               | template_modifier        // L2
               | align_modifier           // L2
-              | dim_modifier             // reusado
-              | based_modifier           // reusado
-              | inz_modifier             // reusado
+              | dim_modifier             // reused
+              | based_modifier           // reused
+              | inz_modifier             // reused
               | extname_ds_modifier      // L2
               | likeds_ds_modifier       // L2
               | likerec_ds_modifier      // L2
@@ -152,19 +152,19 @@ likerec_ds_modifier   ::= KW_LIKEREC LPAREN IDENT (COLON IDENT)? RPAREN {pin=1}
 infds_ds_modifier     ::= KW_INFDS   LPAREN IDENT RPAREN {pin=1}
 ```
 
-**Modifiers DS-específicos:**
-- `TEMPLATE` — la DS no aloca storage, solo define el layout para reusar con `LIKEDS`
-- `ALIGN` — alinea subfields en boundaries naturales
-- `EXTNAME("FILE")` — toma los subfields del schema externo del archivo
-- `LIKEDS(other)` — copia el layout de otra DS
-- `LIKEREC(rec)` — copia el layout del record format de un archivo
-- `INFDS(name)` — declara que esta DS es la file info DS del archivo `name`
+**DS-specific modifiers:**
+- `TEMPLATE` — the DS allocates no storage, it only defines the layout for reuse with `LIKEDS`
+- `ALIGN` — aligns subfields on natural boundaries
+- `EXTNAME("FILE")` — takes subfields from the external schema of the file
+- `LIKEDS(other)` — copies the layout of another DS
+- `LIKEREC(rec)` — copies the layout of a file's record format
+- `INFDS(name)` — declares this DS to be the file info DS of file `name`
 
-**Modifiers reusados de `var_modifier`** (Layer 1):
-- `QUALIFIED` — fuerza acceso vía `ds.subfield` en vez de variables directas
-- `DIM(n)` — array de DSs
-- `BASED(ptr)` — DS basada en puntero
-- `INZ` — inicializa subfields a default
+**Modifiers reused from `var_modifier`** (Layer 1):
+- `QUALIFIED` — forces access via `ds.subfield` instead of direct variables
+- `DIM(n)` — array of DSs
+- `BASED(ptr)` — DS based on a pointer
+- `INZ` — initializes subfields to default
 
 ### Subfields
 
@@ -172,9 +172,9 @@ infds_ds_modifier     ::= KW_INFDS   LPAREN IDENT RPAREN {pin=1}
 ds_subfield ::= IDENT type_specification var_modifier* SEMI {pin=1}
 ```
 
-Idénticos a `variable_declaration` pero **sin** el prefix `DCL-S`. Reusan todos los modifiers de Layer 1 (`INZ`, `OVERLAY`, `POS`, etc.).
+Identical to `variable_declaration` but **without** the `DCL-S` prefix. Reuse all Layer 1 modifiers (`INZ`, `OVERLAY`, `POS`, etc.).
 
-Ejemplo con `OVERLAY` (union de memoria):
+Example with `OVERLAY` (memory union):
 ```bbk
 DCL-DS dateRecord QUALIFIED {
   fullDate CHAR(8);
@@ -186,9 +186,9 @@ DCL-DS dateRecord QUALIFIED {
 
 ---
 
-## Ejemplos
+## Examples
 
-### Código válido
+### Valid code
 
 ```bbk
 CTL-OPT MAIN(helloMain) NOMAIN DFTACTGRP(*NO) DEBUG;
@@ -222,57 +222,57 @@ DCL-DS employees QUALIFIED DIM(1000) {
 DCL-DS customerRec EXTNAME("CUSTOMER") QUALIFIED;
 ```
 
-Ver [`01-hello.bbk`](../../../tests/boxbreaker/examples/01-hello.bbk), [`06-data-structures.bbk`](../../../tests/boxbreaker/examples/06-data-structures.bbk), [`10-files.bbk`](../../../tests/boxbreaker/examples/10-files.bbk).
+See [`01-hello.bbk`](../../../tests/boxbreaker/examples/01-hello.bbk), [`06-data-structures.bbk`](../../../tests/boxbreaker/examples/06-data-structures.bbk), [`10-files.bbk`](../../../tests/boxbreaker/examples/10-files.bbk).
 
-### Errores detectados
+### Errors detected
 
-| Archivo | Tipo de error |
+| File | Error type |
 |---|---|
-| `bad-09-bad-ctl-opt.bbk` | CTL-OPT con args sin cerrar, vacíos, dos puntos sobrantes, falta `;` |
-| `bad-10-bad-file-decl.bbk` | DCL-F sin nombre, sin keywords, USAGE/EXTNAME con tipo de arg incorrecto |
-| `bad-11-bad-data-structures.bbk` | DCL-DS sin nombre/body, LIKEDS mal, subfields sin tipo/`;`, body sin cerrar |
+| `bad-09-bad-ctl-opt.bbk` | CTL-OPT with unterminated args, empty args, trailing colons, missing `;` |
+| `bad-10-bad-file-decl.bbk` | DCL-F without name, no keywords, USAGE/EXTNAME with wrong arg type |
+| `bad-11-bad-data-structures.bbk` | DCL-DS without name/body, bad LIKEDS, subfields without type/`;`, unclosed body |
 
 ---
 
-## Notas de implementación
+## Implementation notes
 
-### El patrón de bloque (`LBRACE ... RBRACE`)
+### The block pattern (`LBRACE ... RBRACE`)
 
-Layer 2 introduce el primer bloque del lenguaje en `ds_body`:
+Layer 2 introduces the first language block in `ds_body`:
 
 ```bnf
 ds_body ::= LBRACE ds_subfield* RBRACE {pin=1}
 ```
 
-El `{pin=1}` después de `LBRACE` es clave: si el `{` aparece, el parser se compromete a cerrar con `}`. Si el `}` falta (body sin terminar), reporta error claramente.
+The `{pin=1}` after `LBRACE` is key: once `{` appears, the parser commits to closing it with `}`. If `}` is missing (unterminated body), it reports the error clearly.
 
-Este mismo patrón se reusará para:
-- `procedure_body` en Layer 3
-- `if`/`else`/`while` blocks en Layer 4
-- `select { when { ... } }` en Layer 4
+This same pattern is reused for:
+- `procedure_body` in Layer 3
+- `if`/`else`/`while` blocks in Layer 4
+- `select { when { ... } }` in Layer 4
 
-### Reuso de modifiers entre `DCL-S` y `DCL-DS`
+### Reusing modifiers between `DCL-S` and `DCL-DS`
 
-`var_modifier` (definido en Layer 1) se reusa para subfields de `DCL-DS`. Eso significa que un subfield puede llevar `INZ`, `OVERLAY`, `DIM`, etc. — las mismas opciones que una variable standalone.
+`var_modifier` (defined in Layer 1) is reused for `DCL-DS` subfields. That means a subfield can carry `INZ`, `OVERLAY`, `DIM`, etc. — the same options as a standalone variable.
 
-Los modifiers exclusivos de DS (`TEMPLATE`, `EXTNAME`, `LIKEDS`, `LIKEREC`, `INFDS`) van en `ds_modifier`, separado.
+DS-exclusive modifiers (`TEMPLATE`, `EXTNAME`, `LIKEDS`, `LIKEREC`, `INFDS`) go in `ds_modifier`, separately.
 
-Hay duplicación intencional en algunos casos:
-- `KW_EXTNAME(...)` aparece como `extname_f_keyword` en DCL-F y como `extname_ds_modifier` en DCL-DS — misma sintaxis pero PSI elements distintos.
-- `KW_INFDS(...)` idem como `infds_f_keyword` y `infds_ds_modifier`.
+There is intentional duplication in some cases:
+- `KW_EXTNAME(...)` appears as `extname_f_keyword` in DCL-F and as `extname_ds_modifier` in DCL-DS — same syntax but different PSI elements.
+- `KW_INFDS(...)` likewise as `infds_f_keyword` and `infds_ds_modifier`.
 
-Esta separación facilita después el análisis semántico (saber si un EXTNAME está en contexto F o DS sin ambigüedad).
+This separation later eases semantic analysis (knowing whether an EXTNAME is in F or DS context without ambiguity).
 
-### CTL-OPT keywords son IDENT, no tokens
+### CTL-OPT keywords are IDENT, not tokens
 
-A diferencia de DCL-F donde cada keyword (`USAGE`, `EXTNAME`, etc.) es un token dedicado, los keywords de CTL-OPT (`MAIN`, `NOMAIN`, `DFTACTGRP`, `THREAD`, etc.) se parsean como `IDENT` genéricos.
+Unlike DCL-F where each keyword (`USAGE`, `EXTNAME`, etc.) is a dedicated token, the CTL-OPT keywords (`MAIN`, `NOMAIN`, `DFTACTGRP`, `THREAD`, etc.) are parsed as generic `IDENT`s.
 
-**Razón:** IBM agrega nuevos keywords de CTL-OPT en cada release. Tenerlos como tokens dedicados forzaría a actualizar el lexer/parser con cada cambio. Mejor parsearlos como identificadores y validar en una fase semántica posterior contra una tabla actualizable.
+**Reason:** IBM adds new CTL-OPT keywords in every release. Having them as dedicated tokens would force lexer/parser updates with each change. Better to parse them as identifiers and validate in a later semantic phase against an updatable table.
 
-**Trade-off:** errores de typo en keywords (ej. `DFTACTGROP` en vez de `DFTACTGRP`) no se detectan a nivel parser — son aceptados como IDENT válido. Se detectarán en validación semántica.
+**Trade-off:** typos in keywords (e.g. `DFTACTGROP` instead of `DFTACTGRP`) are not caught at the parser level — they are accepted as valid IDENT. They will be detected in semantic validation.
 
 ---
 
-## Próxima capa
+## Next layer
 
-`layer3.md` (pendiente) — agregará `DCL-PR` y `DCL-PROC` con parámetros y bodies. Es el más grande porque trae **statements y expressions** dentro del body de procedures.
+[`layer3.md`](layer3.md) — adds `DCL-PR` and `DCL-PROC` with parameters and bodies. It's the largest because it brings **statements and expressions** inside procedure bodies.

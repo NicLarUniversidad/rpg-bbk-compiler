@@ -1,108 +1,108 @@
-# Compilador RPG → BBK → C — Setup y guía
+# RPG → BBK → C Compiler — Setup and guide
 
-**Fecha:** Mayo 2026
-**Estado:** en desarrollo activo, sin git/GitHub todavía
-**Stack confirmado:** Java + Gradle para el compilador; Kotlin/Java + IntelliJ Platform SDK para el plugin
-**Visibilidad inicial:** público desde día 1 (decisión confirmada)
+**Date:** May 2026
+**Status:** in active development, no git/GitHub yet
+**Confirmed stack:** Java + Gradle for the compiler; Kotlin/Java + IntelliJ Platform SDK for the plugin
+**Initial visibility:** public from day 1 (confirmed decision)
 
 ---
 
-## 1. ¿Qué es y por qué importa?
+## 1. What is it and why does it matter?
 
-Toolchain de compilación de RPG (IBM i / AS/400) a binarios nativos en Windows mediante una IR propia (BBK) y `gcc`. Construido para acelerar el ciclo de desarrollo y testing local en proyectos de modernización de legacy.
+A toolchain that compiles RPG (IBM i / AS/400) to native binaries on Windows via a custom IR (BBK) and `gcc`. Built to accelerate the local development and testing cycle in legacy modernization projects.
 
 **Pipeline:**
 
 ```
-RPG → BBK (IR propio) → C → gcc → binario nativo (Windows/Linux/macOS)
+RPG → BBK (custom IR) → C → gcc → native binary (Windows/Linux/macOS)
 ```
 
-**Componentes en desarrollo:**
-- Parser RPG → AST
-- IR BBK (lenguaje intermedio propio)
-- Lowering BBK → C
-- Servicio de runtime que emula primitivas de IBM i ausentes en Windows
-- Plugin IntelliJ con soporte de BBK
+**Components under development:**
+- RPG → AST parser
+- BBK IR (custom intermediate language)
+- BBK → C lowering
+- Runtime service that emulates IBM i primitives missing on Windows
+- IntelliJ plugin with BBK support
 
-**Por qué es portfolio gold:**
-- Compiler design real (IR propio, no solo usar uno existente)
+**Why it's portfolio gold:**
+- Real compiler design (custom IR, not just using an existing one)
 - IDE tooling (IntelliJ Platform SDK)
-- Cross-language semantics complejos (RPG es raro: columnas fijas, indicadores, opcodes oscuros)
-- Pragmatismo de arquitectura (target C → aprovechar backend maduro de gcc)
-- Conecta con tesis sobre LLMs + generación de código
-- Nicho rarísimo: pocos devs jóvenes hacen compiladores de lenguajes legacy
+- Complex cross-language semantics (RPG is weird: fixed columns, indicators, obscure opcodes)
+- Architectural pragmatism (target C → leverage gcc's mature backend)
+- Connects with thesis on LLMs + code generation
+- Very rare niche: few young devs build compilers for legacy languages
 
 ---
 
-## 2. Estrategia de repos
+## 2. Repo strategy
 
-**Decisión:** monorepo inicial. Escindir el plugin cuando llegue a JetBrains Marketplace.
+**Decision:** monorepo initially. Spin the plugin off once it reaches the JetBrains Marketplace.
 
-### Estructura recomendada
+### Recommended structure
 
 ```
 <repo-name>/
-├── README.md                       ← diagrama pipeline + arquitectura
-├── LICENSE                         ← MIT recomendado
+├── README.md                       ← pipeline diagram + architecture
+├── LICENSE                         ← MIT recommended
 ├── .gitignore
 ├── settings.gradle.kts             ← multi-project Gradle
-├── build.gradle.kts                ← config raíz
+├── build.gradle.kts                ← root config
 ├── docs/
-│   ├── architecture.md             ← decisiones de diseño
-│   ├── bbk-spec.md                 ← especificación formal de BBK
-│   └── pipeline-diagram.png        ← visual del flujo
-├── compiler/                       ← módulo Java principal
+│   ├── architecture.md             ← design decisions
+│   ├── bbk-spec.md                 ← formal BBK specification
+│   └── pipeline-diagram.png        ← visual of the flow
+├── compiler/                       ← main Java module
 │   ├── build.gradle.kts
 │   └── src/
 │       ├── main/java/com/larena/bbk/
-│       │   ├── parser/             ← RPG lexer + parser (ANTLR4 recomendado)
-│       │   ├── ast/                ← AST de RPG
-│       │   ├── ir/                 ← BBK como objetos Java
+│       │   ├── parser/             ← RPG lexer + parser (ANTLR4 recommended)
+│       │   ├── ast/                ← RPG AST
+│       │   ├── ir/                 ← BBK as Java objects
 │       │   ├── lowering/           ← BBK → C generator
-│       │   └── cli/                ← entry point CLI
+│       │   └── cli/                ← CLI entry point
 │       └── test/java/...
-├── runtime/                        ← capa emulación IBM i (Java o C)
+├── runtime/                        ← IBM i emulation layer (Java or C)
 │   ├── build.gradle.kts
 │   └── src/...
-├── intellij-plugin/                ← plugin BBK
-│   ├── build.gradle.kts            ← usa gradle-intellij-plugin
+├── intellij-plugin/                ← BBK plugin
+│   ├── build.gradle.kts            ← uses gradle-intellij-plugin
 │   ├── src/main/
-│   │   ├── kotlin/                 ← código del plugin
+│   │   ├── kotlin/                 ← plugin code
 │   │   └── resources/META-INF/plugin.xml
 │   └── ...
-├── examples/                       ← .rpg de prueba
+├── examples/                       ← .rpg test programs
 │   ├── hello-world/
-│   ├── customer-master/            ← ejemplo con DDS, indicadores
+│   ├── customer-master/            ← example with DDS, indicators
 │   └── ...
 └── tests/
-    └── e2e/                        ← compilar RPG → ejecutar → verificar output
+    └── e2e/                        ← compile RPG → run → verify output
 ```
 
-### Cuándo escindir el plugin a repo propio
+### When to spin the plugin into its own repo
 
-- Cuando subas a JetBrains Marketplace (build/release pipeline propio)
-- Cuando aparezcan contributors que solo toquen el plugin
-- Cuando los builds del monorepo sean lentos
+- When you publish to the JetBrains Marketplace (its own build/release pipeline)
+- When contributors who only touch the plugin show up
+- When the monorepo builds get slow
 
 ---
 
-## 3. Naming del repo — PENDIENTE DE DECISIÓN
+## 3. Repo naming — PENDING DECISION
 
-Pendiente. El usuario quería pensarlo más. Opciones evaluadas:
+Pending. The user wanted more time to think about it. Options evaluated:
 
-- `bbk-lang` — foco en el IR, brandeable, corto
-- `bbk-toolchain` — brand BBK + descriptivo
-- `bbk-rpg-toolchain` — descriptivo, SEO friendly para "RPG modernization"
-- `rpg-modernization-toolkit` — marketing/SEO máximo
-- `rpg-bbk` — relación explícita RPG-BBK
-- `bbk` — minimalista, brand puro
+- `bbk-lang` — focus on the IR, brandable, short
+- `bbk-toolchain` — BBK brand + descriptive
+- `bbk-rpg-toolchain` — descriptive, SEO friendly for "RPG modernization"
+- `rpg-modernization-toolkit` — max marketing/SEO
+- `rpg-bbk` — explicit RPG-BBK relationship
+- `bbk` — minimalist, pure brand
 - `rpg-to-native` — action-centric
 
-URL final será: `github.com/NicLarUniversidad/<repo-name>`
+Final URL will be: `github.com/NicLarUniversidad/<repo-name>`
 
 ---
 
-## 4. .gitignore listo para Java + Gradle + IntelliJ
+## 4. .gitignore ready for Java + Gradle + IntelliJ
 
 ```gitignore
 # IntelliJ IDEA / JetBrains IDEs
@@ -120,7 +120,7 @@ gradle-app.setting
 !gradle-wrapper.jar
 !gradle-wrapper.properties
 
-# Maven (por si combinás)
+# Maven (in case you combine)
 target/
 
 # Java
@@ -131,7 +131,7 @@ target/
 *.ear
 hs_err_pid*
 
-# Compiler output / nativos
+# Compiler output / natives
 *.o
 *.exe
 *.dll
@@ -156,16 +156,16 @@ desktop.ini
 .env.local
 *.local
 
-# Plugin signing (cuando lo publiques en Marketplace)
+# Plugin signing (when you publish to Marketplace)
 *.token
 plugin-distribution/
 ```
 
 ---
 
-## 5. README — template para máximo impacto
+## 5. README — template for maximum impact
 
-Debe ser scaneable en 30 segundos. Estructura sugerida:
+It must be scannable in 30 seconds. Suggested structure:
 
 ```markdown
 # <repo-name> — RPG to Native Compiler for Windows
@@ -205,7 +205,7 @@ runtime emulation layer.
 - [ ] IntelliJ plugin: autocomplete
 - [ ] IntelliJ plugin: published to JetBrains Marketplace
 
-(actualizar checkboxes según avance real)
+(update checkboxes as real progress happens)
 
 ## Quick start
 
@@ -254,16 +254,16 @@ See `intellij-plugin/README.md`.
 
 ## Roadmap
 
-(detalle más allá del status — features grandes a 6-12 meses)
+(detail beyond status — big features 6-12 months out)
 
 - Cross-compile to ARM (Raspberry Pi, Apple Silicon)
-- COBOL front-end (reusing BBK back-end)
+- COBOL front-end (reusing the BBK back-end)
 - Web playground (compile RPG → BBK → C → WASM in browser)
 - LLM-assisted RPG generation (link with thesis work)
 
 ## Contributing
 
-(después, cuando sea relevante)
+(later, when relevant)
 
 ## License
 
@@ -272,98 +272,98 @@ MIT
 
 ---
 
-## 6. Stack técnico recomendado
+## 6. Recommended tech stack
 
-| Componente | Tecnología | Por qué |
+| Component | Technology | Why |
 |--|--|--|
-| Parser RPG | **ANTLR4** | Estándar de oro para compiladores en Java. JetBrains lo usa. Conocerlo es señal en CV |
-| Build | **Gradle (Kotlin DSL)** multi-project | Estándar moderno, mejor que Maven para multi-módulo |
-| Plugin IntelliJ | **gradle-intellij-plugin** | Oficial de JetBrains |
-| Test framework | **JUnit 5 + AssertJ** | Estándar moderno Java |
-| Code style | **google-java-format** o **spotless** | Auto-formato, evita bikeshedding |
-| CI | **GitHub Actions** | Free para repos públicos, integración nativa |
-| Documentation | **MkDocs** o markdown plano en `/docs` | Empezar simple, escalar si crece |
-| Runtime emulation lang | **Java o C** | Si C, podés linkearlo directo al binario compilado. Si Java, podés correrlo como servicio aparte |
+| RPG parser | **ANTLR4** | Gold standard for Java compilers. JetBrains uses it. Knowing it is a CV signal |
+| Build | **Gradle (Kotlin DSL)** multi-project | Modern standard, better than Maven for multi-module |
+| IntelliJ plugin | **gradle-intellij-plugin** | JetBrains official |
+| Test framework | **JUnit 5 + AssertJ** | Modern Java standard |
+| Code style | **google-java-format** or **spotless** | Auto-format, avoids bikeshedding |
+| CI | **GitHub Actions** | Free for public repos, native integration |
+| Documentation | **MkDocs** or plain markdown in `/docs` | Start simple, scale if it grows |
+| Runtime emulation language | **Java or C** | If C, you can link it directly into the compiled binary. If Java, you can run it as a separate service |
 
 ---
 
-## 7. Secuencia de comandos para inicializar
+## 7. Command sequence to initialize
 
-Cuando el nombre esté definido:
+Once the name is defined:
 
 ```bash
-# 1. En la carpeta donde tenés el proyecto local
-cd <ruta-de-tu-proyecto-local>
+# 1. In the folder where you have the local project
+cd <path-to-your-local-project>
 
-# 2. Inicializar git
+# 2. Initialize git
 git init -b main
 
-# 3. Crear .gitignore (copiar el contenido de la sección 4 de este doc)
-# Crear README.md (copiar y adaptar el template de la sección 5)
-# Crear LICENSE (MIT — buscar template estándar)
+# 3. Create .gitignore (copy the contents of section 4 of this doc)
+# Create README.md (copy and adapt the template from section 5)
+# Create LICENSE (MIT — find the standard template)
 
-# 4. Primer commit con estructura
+# 4. First commit with structure
 git add .gitignore README.md LICENSE
 git commit -m "Initial commit: project structure and README"
 
-# 5. Agregar el código existente
+# 5. Add the existing code
 git add .
 git commit -m "Initial code drop: compiler, runtime, intellij plugin"
 
-# 6. Crear repo público en GitHub
+# 6. Create public repo on GitHub
 gh repo create NicLarUniversidad/<repo-name> --public \
   --description "RPG to native compiler via BBK IR for Windows"
 
-# 7. Linkear remoto y push
+# 7. Link remote and push
 git remote add origin git@github.com:NicLarUniversidad/<repo-name>.git
 git push -u origin main
 ```
 
-Si no tenés `gh` CLI: crear el repo desde la web UI de GitHub primero, después linkear y push.
+If you don't have the `gh` CLI: create the repo from GitHub's web UI first, then link and push.
 
 ---
 
-## 8. Quick wins post-creación del repo
+## 8. Quick wins after creating the repo
 
-Orden recomendado (1 cosa por sesión):
+Recommended order (one thing per session):
 
-1. **README sólido** con diagrama del pipeline (sección 5 te lo deja resuelto)
-2. **GitHub Actions** para CI básico (build + test en push/PR) — 30 min
-3. **Badges en README** (build status, license, version) — 10 min
-4. **`docs/architecture.md`** con las decisiones de diseño — 1-2 hs (justifica el IR, justifica C como target, justifica el plugin)
-5. **`docs/bbk-spec.md`** con la especificación formal de BBK — esto se vuelve la pieza más impresionante del repo
-6. **Diagrama del pipeline en SVG o PNG** dentro de `/docs` — visual matters
-7. **Plugin en JetBrains Marketplace** (cuando esté estable) — eso te da perfil público en marketplace.jetbrains.com
+1. **Solid README** with a pipeline diagram (section 5 solves this for you)
+2. **GitHub Actions** for basic CI (build + test on push/PR) — 30 min
+3. **Badges in README** (build status, license, version) — 10 min
+4. **`docs/architecture.md`** with design decisions — 1-2 hrs (justifies the IR, justifies C as target, justifies the plugin)
+5. **`docs/bbk-spec.md`** with the formal BBK specification — this becomes the most impressive piece of the repo
+6. **Pipeline diagram in SVG or PNG** inside `/docs` — visual matters
+7. **Plugin on JetBrains Marketplace** (when stable) — this gives you a public profile at marketplace.jetbrains.com
 
 ---
 
-## 9. CV — cómo se va a ver cuando sumemos
+## 9. CV — how it will look when we add it
 
-**Cuando llegue a MVP funcional, va en sección "Proyectos personales destacados" del CV ES y EN.**
+**When it reaches a functional MVP, it goes in the "Featured personal projects" section of the ES and EN CV.**
 
-### Borrador ES (para revisar al agregar)
+### ES draft (review when adding)
 
 ```
-### <nombre del proyecto> — Compilador RPG para Windows con IR propio · 2026 – Actualidad
+### <project name> — RPG-to-Windows Compiler with Custom IR · 2026 – Present
 github.com/NicLarUniversidad/<repo-name>
 
-Toolchain de compilación de RPG (IBM i / AS/400) a binarios nativos en Windows,
-diseñado para acelerar el ciclo de desarrollo y testing local en proyectos de
-modernización de legacy.
+A compilation toolchain for RPG (IBM i / AS/400) to native binaries on Windows,
+designed to accelerate the local development and testing cycle in legacy
+modernization projects.
 
-Pipeline: RPG → BBK (lenguaje intermedio propio) → C → gcc.
+Pipeline: RPG → BBK (custom intermediate language) → C → gcc.
 
-- Parser RPG construido con ANTLR4
-- Diseño e implementación de BBK como IR propio
-- Lowering BBK → C
-- Capa de servicio que emula primitivas del runtime IBM i ausentes en Windows
-- Plugin de IntelliJ para soporte de BBK
+- RPG parser built with ANTLR4
+- Design and implementation of BBK as the custom IR
+- BBK → C lowering
+- Service layer that emulates IBM i runtime primitives missing on Windows
+- IntelliJ plugin for BBK support
 
 Stack: Java, Gradle, ANTLR4, JUnit 5, Kotlin (plugin), IntelliJ Platform SDK,
 GitHub Actions, gcc.
 ```
 
-### Borrador EN (para revisar al agregar)
+### EN draft (review when adding)
 
 ```
 ### <project-name> — RPG-to-Windows Compiler with Custom IR · 2026 – Present
@@ -387,66 +387,66 @@ GitHub Actions, gcc.
 
 ---
 
-## 10. Pendientes inmediatos (próxima sesión sobre este tema)
+## 10. Immediate pending items (next session on this topic)
 
-1. **Definir el nombre del repo** ← bloqueante para todo
-2. Crear estructura de carpetas en local
-3. Inicializar git
-4. Escribir README v1
-5. Crear repo en GitHub público
-6. Push inicial
-7. Setup GitHub Actions CI (build + test)
-8. Empezar a documentar BBK en `docs/bbk-spec.md`
+1. **Define the repo name** ← blocking everything
+2. Create folder structure locally
+3. Initialize git
+4. Write README v1
+5. Create the public repo on GitHub
+6. Initial push
+7. Set up GitHub Actions CI (build + test)
+8. Start documenting BBK in `docs/bbk-spec.md`
 
 ---
 
-## 11. Conexiones estratégicas
+## 11. Strategic connections
 
-Este proyecto se conecta con tu narrativa profesional así:
+This project connects with your professional narrative like this:
 
 ```
-IAM (modernización RPG → RDMLX, actual)
+IAM (RPG → RDMLX modernization, current)
                 ↓
-        Vieron el dolor real
+        Saw the real pain
                 ↓
-  Compilador RPG-Windows-BBK (esto)
+  RPG-Windows-BBK compiler (this)
                 ↓
-    Resuelve el dolor de manera generalizable
+   Solves the pain in a generalizable way
                 ↓
-        Tesis IA generativa
+        Generative-AI thesis
                 ↓
-LLM genera RPG → tu compilador lo ejecuta sin IBM
+LLM generates RPG → your compiler runs it without IBM
                 ↓
-    Tesis con caso de uso productivo end-to-end
+    Thesis with a productive end-to-end use case
 ```
 
-**Esto NO es 3 proyectos sueltos — es UN arco coherente.** Vendelo así en entrevistas, posts y postulaciones futuras.
+**This is NOT 3 separate projects — it's ONE coherent arc.** Sell it that way in interviews, posts, and future job applications.
 
 ---
 
-## 12. Posts de LinkedIn que se desprenden naturalmente
+## 12. LinkedIn posts that come out of this naturally
 
-Cuando el repo esté arriba y el README sea presentable:
+When the repo is up and the README is presentable:
 
-- **Post:** *"Por qué decidí diseñar un IR propio en vez de compilar RPG directamente a C"*
-- **Post:** *"Construyendo un plugin de IntelliJ para mi propio lenguaje — lecciones del Platform SDK"*
-- **Post:** *"Qué aprendí compilando RPG (un lenguaje de los 70) a binarios modernos"*
-- **Post:** *"Diseño de BBK: cómo modelé un lenguaje intermedio para business languages legacy"*
-- **Post (con cuidado):** *"Vibecoding un BPMS mientras escribo un compilador 'a mano': dos disciplinas opuestas en paralelo"* — bridging post
+- **Post:** *"Why I decided to design my own IR instead of compiling RPG directly to C"*
+- **Post:** *"Building an IntelliJ plugin for my own language — lessons from the Platform SDK"*
+- **Post:** *"What I learned compiling RPG (a '70s language) into modern binaries"*
+- **Post:** *"BBK design: how I modeled an intermediate language for legacy business languages"*
+- **Post (carefully):** *"Vibecoding a BPMS while writing a compiler 'by hand': two opposite disciplines in parallel"* — bridging post
 
-Cada post genera tracción independiente. Espaciar cada 2-3 semanas.
+Each post generates independent traction. Space them every 2-3 weeks.
 
 ---
 
-## 13. Conferencias / publicaciones potenciales (largo plazo)
+## 13. Potential conferences / publications (long term)
 
-Para tener en el radar:
+To keep on the radar:
 
-- **SLE (Software Language Engineering)** — exactamente el tipo de paper
-- **MODELS** — Model-Driven Engineering, encaja
+- **SLE (Software Language Engineering)** — exactly this type of paper
+- **MODELS** — Model-Driven Engineering, a fit
 - **ICSE Software Engineering in Practice (SEIP)** track
 - **IBM TechXchange Conference** — IBM Champions program
 - **Argentina Symposium on Software Engineering (ASSE)**
-- **JConf Argentina** — talk técnica local
+- **JConf Argentina** — local technical talk
 
-No urgente, pero tener una versión "publicable" del trabajo te abre puertas académicas si querés el doctorado.
+Not urgent, but having a "publishable" version of the work opens academic doors if you want a PhD.

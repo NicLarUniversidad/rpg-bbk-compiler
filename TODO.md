@@ -1,82 +1,83 @@
 # TODO — BoxBreaker
 
-Lista de trabajo en curso y pendiente. Estado vivo, se actualiza a medida que avanza el desarrollo.
+In-progress and pending work list. Live document, updated as development advances.
 
-Para el contexto arquitectónico de cada item ver [`docs/architecture.md`](docs/architecture.md).
+For the architectural context of each item see [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
-## Hecho
+## Done
 
-- [x] Arquitectura inicial documentada (`docs/architecture.md`)
-- [x] Estructura de módulos del monorepo (9 subproyectos)
+- [x] Initial architecture documented (`docs/architecture.md`)
+- [x] Monorepo module structure (9 subprojects)
 - [x] README + `.gitignore` + `LICENSE`
-- [x] Repo público creado en GitHub: `NicLarUniversidad/rpg-bbk-compiler`
+- [x] Public repo created on GitHub: `NicLarUniversidad/rpg-bbk-compiler`
 
-## En curso
+## In progress
 
-(vacío por ahora)
+(empty for now)
 
-## Próximo
+## Next
 
-- [ ] Spec inicial de BBK (`docs/bbk-spec.md`) — definir gramática, tipos, opcodes mínimos
-- [ ] Decidir lenguaje de `bbk-core` (Java vs Kotlin)
-- [ ] Decidir lenguaje de `bbk-runtime` (Java vs C)
+- [ ] Initial BBK spec (`docs/bbk-spec.md`) — define grammar, types, minimal opcodes
+- [ ] Decide language for `bbk-core` (Java vs Kotlin)
+- [ ] Decide language for `bbk-runtime` (Java vs C)
 
-## Backlog — núcleo del compilador
+## Backlog — compiler core
 
-- [ ] Lexer RPG
-- [ ] Parser RPG (subset básico — columnas fijas, opcodes core)
-- [ ] AST RPG
-- [ ] Traducción RPG → BBK (opcodes core)
-- [ ] AST/IR BBK en `bbk-core`
-- [ ] Análisis semántico BBK
-- [ ] Lowering BBK → C (opcodes core)
-- [ ] Invocación a `gcc` desde `bbk-compiler`
-- [ ] Intérprete BBK (modo dev)
+- [ ] RPG lexer
+- [ ] RPG parser (basic subset — fixed columns, core opcodes)
+- [ ] RPG AST
+- [ ] RPG → BBK translation (core opcodes)
+- [ ] BBK AST/IR in `bbk-core`
+- [ ] BBK semantic analysis
+- [ ] BBK → C lowering (core opcodes)
+- [ ] `gcc` invocation from `bbk-compiler`
+- [ ] BBK interpreter (dev mode)
 
 ## Backlog — runtime
 
-- [ ] Emulación de job queues
-- [ ] Emulación de activation groups
-- [ ] Emulación de library lists
-- [ ] Acceso a datos estilo DDS
+- [ ] Job queues emulation
+- [ ] Activation groups emulation
+- [ ] Library lists emulation
+- [ ] DDS-style data access
 - [ ] Spool files
 
-## Backlog — tooling IntelliJ
+## Backlog — IntelliJ tooling
 
 - [ ] `plugin-bbk`: syntax highlighting
-- [ ] `plugin-bbk`: parser de editor (errores inline)
-- [ ] `plugin-bbk`: autocomplete básico
+- [ ] `plugin-bbk`: editor parser (inline errors)
+- [ ] `plugin-bbk`: basic autocomplete (see `docs/boxbreaker/autocomplete/basic-autocomplete/`)
+  - [ ] Decide: single shared icon (reuse `bbk.svg`) vs differentiated icons per category (keyword / type / modifier / directive / file-op / star-ident)
 - [ ] `plugin-rpg`: syntax highlighting
-- [ ] `plugin-rpg`: parser de editor
-- [ ] `plugin-rpg`: comando "traducir a BBK"
+- [ ] `plugin-rpg`: editor parser
+- [ ] `plugin-rpg`: "translate to BBK" command
 
 ## Backlog — IDE
 
-- [ ] `boxbreaker-ide`: bundle inicial sobre IntelliJ Platform SDK
-- [ ] `boxbreaker-ide`: integración entry points para intérprete y AOT
-- [ ] `boxbreaker-ide`: branding (splash, icono, nombre)
-- [ ] `boxbreaker-ide`: build de distribución (installer)
+- [ ] `boxbreaker-ide`: initial bundle on IntelliJ Platform SDK
+- [ ] `boxbreaker-ide`: entry points integration for interpreter and AOT
+- [ ] `boxbreaker-ide`: branding (splash, icon, name)
+- [ ] `boxbreaker-ide`: distribution build (installer)
 
 ## Backlog — testing
 
-- [ ] Suite E2E: compilar RPG → ejecutar → verificar output
-- [ ] Equivalencia intérprete vs AOT (mismo RPG, mismo output)
+- [ ] E2E suite: compile RPG → run → verify output
+- [ ] Interpreter vs AOT equivalence (same RPG, same output)
 
-## Distribución
+## Distribution
 
-- [ ] Publicación del plugin BBK en JetBrains Marketplace
-- [ ] Publicación del plugin RPG en JetBrains Marketplace
-- [ ] Distribución de BoxBreaker IDE (installers Windows/Linux)
+- [ ] Publish BBK plugin on JetBrains Marketplace
+- [ ] Publish RPG plugin on JetBrains Marketplace
+- [ ] Distribute BoxBreaker IDE (Windows/Linux installers)
 
 ---
 
-## Roadmap (largo plazo)
+## Roadmap (long-term)
 
-Ideas más allá del MVP, sin compromiso de timeline:
+Ideas beyond the MVP, no timeline commitment:
 
-- Cross-compile a ARM (Raspberry Pi, Apple Silicon)
-- Front-end para COBOL (reusando el back-end BBK)
-- Playground web (RPG → BBK → C → WASM en el navegador)
-- Integración con generación de código vía LLMs (link con tesis)
+- Cross-compile to ARM (Raspberry Pi, Apple Silicon)
+- COBOL front-end (reusing the BBK back-end)
+- Web playground (RPG → BBK → C → WASM in the browser)
+- Integration with LLM code generation (link with thesis)

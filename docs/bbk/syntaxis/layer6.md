@@ -1,41 +1,41 @@
 # BBK Grammar — Layer 6
 
-**Estado:** implementada y verificada
-**Fuente del parser:** [`plugin-bbk/src/main/grammar/BBK.bnf`](../../../plugin-bbk/src/main/grammar/BBK.bnf)
-**Pre-requisitos:** [`layer1.md`](layer1.md) → [`layer5.md`](layer5.md)
-**Archivos de prueba:** [`11-directives.bbk`](../../../tests/boxbreaker/examples/11-directives.bbk) (válido), [`bad-15-bad-directives.bbk`](../../../tests/boxbreaker/examples/bad/bad-15-bad-directives.bbk) (errores)
+**Status:** implemented and verified
+**Parser source:** [`plugin-bbk/src/main/grammar/BBK.bnf`](../../../plugin-bbk/src/main/grammar/BBK.bnf)
+**Prerequisites:** [`layer1.md`](layer1.md) → [`layer5.md`](layer5.md)
+**Test files:** [`11-directives.bbk`](../../../tests/boxbreaker/examples/11-directives.bbk) (valid), [`bad-15-bad-directives.bbk`](../../../tests/boxbreaker/examples/bad/bad-15-bad-directives.bbk) (intentional errors)
 
 ---
 
-## Alcance
+## Scope
 
-Layer 6 cierra el conjunto sintáctico principal con **directivas de preprocesador** (`PRE-*`). Todas se procesan idealmente en una fase pre-parser, pero por simplicidad las integramos como statements en la gramática principal.
+Layer 6 closes out the main syntactic surface with **preprocessor directives** (`PRE-*`). Ideally these are all handled in a pre-parser phase, but for simplicity we integrate them as statements in the main grammar.
 
-| Directiva | Forma | Ejemplo |
+| Directive | Form | Example |
 |---|---|---|
-| `PRE-IF` / `PRE-ELSEIF` / `PRE-ELSE` / `PRE-ENDIF` | Compilación condicional | `PRE-IF DEFINED(DEBUG) ... PRE-ENDIF` |
-| `PRE-DEFINE` | Define macro (con o sin valor) | `PRE-DEFINE VERSION "1.0.0"` o `PRE-DEFINE DEBUG` |
-| `PRE-UNDEFINE` | Quita una macro | `PRE-UNDEFINE DEBUG` |
-| `PRE-INCLUDE` | Incluye otro archivo | `PRE-INCLUDE "common-types.bbki"` |
-| `PRE-EOF` | Fin de fuente prematuro | `PRE-EOF` |
+| `PRE-IF` / `PRE-ELSEIF` / `PRE-ELSE` / `PRE-ENDIF` | Conditional compilation | `PRE-IF DEFINED(DEBUG) ... PRE-ENDIF` |
+| `PRE-DEFINE` | Define a macro (with or without value) | `PRE-DEFINE VERSION "1.0.0"` or `PRE-DEFINE DEBUG` |
+| `PRE-UNDEFINE` | Remove a macro | `PRE-UNDEFINE DEBUG` |
+| `PRE-INCLUDE` | Include another file | `PRE-INCLUDE "common-types.bbki"` |
+| `PRE-EOF` | Premature end of source | `PRE-EOF` |
 
-**Después de L6 — la sintaxis principal está completa.** Lo que sigue son refinamientos semánticos y mejoras del IDE, no nueva gramática.
-
----
-
-## Estrategia: directivas como statements planos
-
-A diferencia de muchos preprocesadores (C/C++) donde IF/ENDIF forman un bloque sintáctico anidado, en BBK **cada directiva es un statement plano e independiente**. El matching `PRE-IF`↔`PRE-ENDIF` se valida después (semánticamente).
-
-**Trade-off:** el parser no reporta automáticamente "orphan PRE-ELSE" o "missing PRE-ENDIF". Eso lo hace un futuro analizador semántico.
-
-**Beneficio:** la gramática es más simple, sin nesting recursivo de directivas, y las directivas pueden aparecer en cualquier lugar (top-level o dentro de bloques) sin gramáticas paralelas.
+**After L6 — the main syntax is complete.** What follows are semantic refinements and IDE improvements, not new grammar.
 
 ---
 
-## Producciones BNF
+## Strategy: directives as flat statements
 
-### Categoría general
+Unlike many preprocessors (C/C++) where IF/ENDIF form a nested syntactic block, in BBK **each directive is a flat, independent statement**. The `PRE-IF`↔`PRE-ENDIF` matching is validated later (semantically).
+
+**Trade-off:** the parser does not automatically report "orphan PRE-ELSE" or "missing PRE-ENDIF". A future semantic analyzer will handle that.
+
+**Benefit:** the grammar is simpler, with no recursive nesting of directives, and directives can appear anywhere (top-level or inside blocks) without parallel grammars.
+
+---
+
+## BNF productions
+
+### General category
 
 ```bnf
 directive ::= pre_if_directive
@@ -48,7 +48,7 @@ directive ::= pre_if_directive
             | pre_eof_directive
 ```
 
-### Compilación condicional
+### Conditional compilation
 
 ```bnf
 pre_if_directive     ::= KW_PRE_IF expression {pin=1}
@@ -57,17 +57,17 @@ pre_else_directive   ::= KW_PRE_ELSE
 pre_endif_directive  ::= KW_PRE_ENDIF
 ```
 
-La condición es una `expression` completa (de L4). Eso significa que `PRE-IF` acepta:
-- IDENT solo: `PRE-IF DEBUG` (significa "si DEBUG está definido y es truthy")
-- Llamadas a función: `PRE-IF DEFINED(DEBUG)` — `DEFINED` se parsea como IDENT y `(DEBUG)` como llamada
-- Negación: `PRE-IF !DEFINED(DEBUG)`
-- Booleanas: `PRE-IF DEFINED(DEBUG) && !DEFINED(PRODUCTION)`
-- Constantes: `PRE-IF VERSION_MAJOR > 2`
-- Literales: `PRE-IF true` (siempre incluye)
+The condition is a full `expression` (from L4). That means `PRE-IF` accepts:
+- Bare IDENT: `PRE-IF DEBUG` (means "if DEBUG is defined and truthy")
+- Function calls: `PRE-IF DEFINED(DEBUG)` — `DEFINED` parses as an IDENT and `(DEBUG)` as a call
+- Negation: `PRE-IF !DEFINED(DEBUG)`
+- Booleans: `PRE-IF DEFINED(DEBUG) && !DEFINED(PRODUCTION)`
+- Constants: `PRE-IF VERSION_MAJOR > 2`
+- Literals: `PRE-IF true` (always includes)
 
-**Nota sobre `NOT`:** BBK usa `!` para negación. El estilo RPG `NOT DEFINED(X)` no es válido aquí; usar `!DEFINED(X)`.
+**Note on `NOT`:** BBK uses `!` for negation. The RPG-style `NOT DEFINED(X)` is not valid here; use `!DEFINED(X)`.
 
-### Definiciones de macro
+### Macro definitions
 
 ```bnf
 pre_define_directive   ::= KW_PRE_DEFINE IDENT pre_define_value? {pin=1}
@@ -76,23 +76,23 @@ pre_undefine_directive ::= KW_PRE_UNDEFINE IDENT {pin=1}
 private pre_define_value ::= literal | STAR_IDENT
 ```
 
-Dos formas de `PRE-DEFINE`:
-- **Flag (sin valor):** `PRE-DEFINE DEBUG` — la macro está definida, sin valor de reemplazo
-- **Con valor:** `PRE-DEFINE VERSION "1.0.0"` — la macro se reemplaza por el literal
+Two forms of `PRE-DEFINE`:
+- **Flag (no value):** `PRE-DEFINE DEBUG` — the macro is defined, with no replacement value
+- **With value:** `PRE-DEFINE VERSION "1.0.0"` — the macro is replaced by the literal
 
-El valor puede ser cualquier `literal` (string, número, hex, etc.) o un `STAR_IDENT` (`*NO`, `*YES`). **No** se permite IDENT como valor para evitar ambigüedad con la siguiente directiva.
+The value can be any `literal` (string, number, hex, etc.) or a `STAR_IDENT` (`*NO`, `*YES`). IDENT is **not** allowed as a value, to avoid ambiguity with the following directive.
 
-### Inclusión
+### Inclusion
 
 ```bnf
 pre_include_directive ::= KW_PRE_INCLUDE (STR_LIT | IDENT) {pin=1}
 ```
 
-Acepta dos formas:
-- `PRE-INCLUDE "common-types.bbki"` — string literal (más común, soporta paths con caracteres especiales)
-- `PRE-INCLUDE common_types` — identificador (estilo RPG `/COPY libname`)
+Accepts two forms:
+- `PRE-INCLUDE "common-types.bbki"` — string literal (most common; supports paths with special characters)
+- `PRE-INCLUDE common_types` — identifier (RPG `/COPY libname` style)
 
-Decisión cerrada en `tokens.md`: `/COPY` y `/INCLUDE` se unificaron en `PRE-INCLUDE`.
+Decision settled in `tokens.md`: `/COPY` and `/INCLUDE` were unified into `PRE-INCLUDE`.
 
 ### EOF
 
@@ -100,9 +100,9 @@ Decisión cerrada en `tokens.md`: `/COPY` y `/INCLUDE` se unificaron en `PRE-INC
 pre_eof_directive ::= KW_PRE_EOF
 ```
 
-Marca fin prematuro del fuente. Todo lo que sigue después de `PRE-EOF` se ignora (el preprocesador no lo emite al parser principal).
+Marks premature end of source. Everything after `PRE-EOF` is ignored (the preprocessor does not emit it to the main parser).
 
-### Integración con top-level y bloques
+### Integration with top-level and blocks
 
 ```bnf
 top_level_item ::= variable_declaration
@@ -124,7 +124,7 @@ block_item ::= variable_declaration
              | unknown_block_item
 ```
 
-Las directivas son válidas **tanto a nivel módulo como dentro de procedure bodies** (y por extensión, dentro de cualquier bloque). Esto permite:
+Directives are valid **both at module level and inside procedure bodies** (and by extension, inside any block). This enables:
 
 ```bbk
 PRE-DEFINE DEBUG
@@ -144,9 +144,9 @@ DCL-PROC main {
 
 ---
 
-## Ejemplos
+## Examples
 
-### Válido — `11-directives.bbk`
+### Valid — `11-directives.bbk`
 
 ```bbk
 PRE-DEFINE VERSION "1.0.0"
@@ -180,51 +180,51 @@ PRE-ELSEIF DEFINED(LITE_MODE)
 PRE-ENDIF
 ```
 
-Layer 6 reconoce todas las directivas + el contenido condicionalmente compilado entre ellas (que parsea con el resto de la gramática como si las directivas no estuvieran).
+Layer 6 recognizes every directive plus the conditionally compiled content between them (which is parsed by the rest of the grammar as if the directives weren't there).
 
-### Errores detectados — `bad-15-bad-directives.bbk`
+### Errors detected — `bad-15-bad-directives.bbk`
 
-| Categoría | Casos |
+| Category | Cases |
 |---|---|
-| PRE-DEFINE sin nombre | `PRE-DEFINE` |
-| PRE-DEFINE con nombre que no es IDENT | `PRE-DEFINE "STRING_NAME"`, `PRE-DEFINE 123` |
-| PRE-UNDEFINE sin nombre o con tipo incorrecto | `PRE-UNDEFINE`, `PRE-UNDEFINE "S"` |
-| PRE-INCLUDE sin archivo | `PRE-INCLUDE`, `PRE-INCLUDE 42` |
-| PRE-IF / PRE-ELSEIF sin condición | `PRE-IF`, `PRE-ELSEIF` |
-| Condición incompleta | `PRE-IF DEFINED(` |
+| PRE-DEFINE without a name | `PRE-DEFINE` |
+| PRE-DEFINE with a non-IDENT name | `PRE-DEFINE "STRING_NAME"`, `PRE-DEFINE 123` |
+| PRE-UNDEFINE missing name or with wrong type | `PRE-UNDEFINE`, `PRE-UNDEFINE "S"` |
+| PRE-INCLUDE without a file | `PRE-INCLUDE`, `PRE-INCLUDE 42` |
+| PRE-IF / PRE-ELSEIF without a condition | `PRE-IF`, `PRE-ELSEIF` |
+| Incomplete condition | `PRE-IF DEFINED(` |
 
-**Casos que NO marcan errores** (intencionalmente):
-- `PRE-ELSE` orphan (sin PRE-IF previo) — el parser no valida pairing
-- `PRE-ENDIF` orphan — idem
-- `PRE-EOF` en cualquier lugar — idem
+**Cases that do NOT flag errors** (intentionally):
+- Orphan `PRE-ELSE` (no preceding PRE-IF) — the parser does not validate pairing
+- Orphan `PRE-ENDIF` — ditto
+- `PRE-EOF` anywhere — ditto
 
-Esos casos los reportaría un futuro analizador semántico.
+Those cases will be reported by a future semantic analyzer.
 
 ---
 
-## Notas de implementación
+## Implementation notes
 
-### Sin SEMI en directivas
+### No SEMI on directives
 
-Las directivas no terminan en `;`. Esto difiere del resto de BBK (donde todo statement termina en `;`). Es una decisión consciente para alinear con la convención RPG de directivas line-oriented.
+Directives do not end with `;`. This differs from the rest of BBK (where every statement ends in `;`). It's a deliberate decision to align with the RPG convention of line-oriented directives.
 
-**Cómo el parser sabe dónde termina una directiva:** mediante greedy matching de su contenido fijo. Por ejemplo, `PRE-DEFINE VERSION "1.0.0"` consume `KW_PRE_DEFINE`, `IDENT (VERSION)`, y un `pre_define_value` (el string literal). Después de eso, el siguiente token inicia un nuevo `top_level_item` (o `block_item`).
+**How the parser knows where a directive ends:** by greedy matching of its fixed content. For example, `PRE-DEFINE VERSION "1.0.0"` consumes `KW_PRE_DEFINE`, `IDENT (VERSION)`, and a `pre_define_value` (the string literal). After that, the next token starts a new `top_level_item` (or `block_item`).
 
-Si después de `PRE-DEFINE VERSION` hay otro IDENT en vez de un literal:
+If after `PRE-DEFINE VERSION` there's another IDENT instead of a literal:
 ```
 PRE-DEFINE VERSION
 otherIdent
 ```
 
-`pre_define_value` no matchea IDENT por diseño (solo `literal | STAR_IDENT`). Así que el `otherIdent` queda como siguiente item para parsear. Esto evita la ambigüedad de "es este IDENT el valor de la define previa o un statement nuevo?".
+`pre_define_value` doesn't match IDENT by design (only `literal | STAR_IDENT`). So `otherIdent` is left as the next item to parse. This avoids the ambiguity of "is this IDENT the value of the previous define or a new statement?".
 
-### Por qué `expression` para la condición de PRE-IF
+### Why `expression` for the PRE-IF condition
 
 ```bnf
 pre_if_directive ::= KW_PRE_IF expression {pin=1}
 ```
 
-En lugar de inventar una `pre_condition` ad-hoc, reusamos `expression` (de L4). Eso le da a `PRE-IF` toda la potencia de expresiones:
+Instead of inventing an ad-hoc `pre_condition`, we reuse `expression` (from L4). That gives `PRE-IF` the full power of expressions:
 
 ```bbk
 PRE-IF DEFINED(DEBUG)
@@ -234,64 +234,64 @@ PRE-IF DEFINED(DEBUG) && !DEFINED(LITE_MODE)
 PRE-IF (FEATURES & 0x1) != 0
 ```
 
-Todo eso parsea con la misma regla. La semántica (qué significa "DEFINED", cómo se evalúa al preprocesar) es responsabilidad de la fase de preproceso, no del parser.
+All of that parses with the same rule. The semantics (what "DEFINED" means, how it's evaluated at preprocessing time) is the preprocessing phase's responsibility, not the parser's.
 
-### `DEFINED(X)` parsea como función
+### `DEFINED(X)` parses as a function call
 
-`DEFINED` no es un keyword en BBK. Se parsea como IDENT. `DEFINED(X)` es entonces un `postfix_expression`:
+`DEFINED` is not a keyword in BBK. It parses as an IDENT. `DEFINED(X)` is therefore a `postfix_expression`:
 - `DEFINED` (primary, IDENT)
 - `(X)` (postfix_suffix, function call)
 
-El preprocesador semántico debe reconocer "esta llamada en contexto de PRE-IF significa: ¿está X definido?".
+The semantic preprocessor must recognize "this call in PRE-IF context means: is X defined?".
 
-Mismo patrón que con BIFs como `trim(x)`, `len(s)`, etc. — el parser no sabe nada especial, los reconoce como llamadas genéricas.
+Same pattern as with BIFs like `trim(x)`, `len(s)`, etc. — the parser doesn't know anything special; it recognizes them as generic calls.
 
-### Match de IF/ENDIF es semántico
+### IF/ENDIF matching is semantic
 
-El parser **no** valida que un `PRE-IF` tenga su `PRE-ENDIF` correspondiente. Cada directiva es un item plano. El validador semántico (futuro) recorrerá el árbol PSI verificando:
-- Todo `PRE-IF` tiene un `PRE-ENDIF` posterior antes de EOF
-- `PRE-ELSE` y `PRE-ELSEIF` están dentro de un PRE-IF abierto
-- `PRE-ELSE` aparece a lo sumo una vez por bloque
+The parser does **not** validate that a `PRE-IF` has a matching `PRE-ENDIF`. Each directive is a flat item. The (future) semantic validator will walk the PSI tree checking:
+- Every `PRE-IF` has a subsequent `PRE-ENDIF` before EOF
+- `PRE-ELSE` and `PRE-ELSEIF` are inside an open PRE-IF
+- `PRE-ELSE` appears at most once per block
 - Etc.
 
-Si la complejidad de mantener esto separado se vuelve molesta, podemos refactorizar a un `pre_if_block` que envuelva los items con anidación real. Por ahora, simpler es mejor.
+If the complexity of keeping this separate becomes annoying, we can refactor into a `pre_if_block` that wraps the items with real nesting. For now, simpler is better.
 
 ---
 
-## Estado del proyecto después de Layer 6
+## Project status after Layer 6
 
-**La sintaxis de BBK está completa.** Las 6 capas cubren toda la superficie del lenguaje:
+**The BBK syntax is complete.** The 6 layers cover the language's entire surface:
 
-| Capa | Foco | Estado |
+| Layer | Focus | Status |
 |---|---|---|
-| L1 | Variables, constantes | ✅ |
-| L2 | Módulo (CTL-OPT, archivos, data structures) | ✅ |
+| L1 | Variables, constants | ✅ |
+| L2 | Module (CTL-OPT, files, data structures) | ✅ |
 | L3 | Procedures | ✅ |
 | L4 | Statements + expressions | ✅ |
 | L5 | File ops, subroutines, CALLP | ✅ |
-| L6 | Directivas | ✅ |
+| L6 | Directives | ✅ |
 
-**Lo que sigue (fuera del scope de "sintaxis"):**
+**What's next (outside the "syntax" scope):**
 
-1. **Mejoras del IDE plugin:**
-   - Actualizar `BbkSyntaxHighlighter` con los keywords de L5 y L6 (file ops, subroutines, directives) — sin esto se ven sin color especial
-   - Structure view de la PSI
-   - Code folding por bloque y por subroutine
+1. **IDE plugin improvements:**
+   - Update `BbkSyntaxHighlighter` with the L5 and L6 keywords (file ops, subroutines, directives) — without this they appear without special color
+   - PSI structure view
+   - Code folding per block and per subroutine
    - Brace matching
-   - Comment toggle (`//` y `/* */`)
-   - Tabla de keywords para autocomplete básico
+   - Comment toggle (`//` and `/* */`)
+   - Keyword table for basic autocomplete
 
-2. **Análisis semántico:**
-   - Type checking (`DCL-S x INT(10); x = "string"` debería fallar)
-   - Scope resolution (referencias a variables no declaradas)
-   - Matching de IF/ENDIF, BEGSR/ENDSR
-   - Resolución de prototipos vs definiciones
-   - Validación de argumentos en llamadas (cuenta y tipo)
+2. **Semantic analysis:**
+   - Type checking (`DCL-S x INT(10); x = "string"` should fail)
+   - Scope resolution (references to undeclared variables)
+   - IF/ENDIF, BEGSR/ENDSR matching
+   - Resolution of prototypes vs definitions
+   - Validation of call arguments (count and type)
 
-3. **Generación de código** (lowering BBK → C):
-   - El backend en `bbk-compiler`
-   - El runtime en `bbk-runtime` (decimal BCD propio, emulación IBM i)
+3. **Code generation** (lowering BBK → C):
+   - The backend in `bbk-compiler`
+   - The runtime in `bbk-runtime` (custom decimal BCD, IBM i emulation)
 
-4. **Frontend RPG → BBK** (`rpg-frontend`):
-   - Parser de RPG (fixed + free form)
-   - Traducción RPG → AST → BBK
+4. **RPG → BBK frontend** (`rpg-frontend`):
+   - RPG parser (fixed + free form)
+   - RPG → AST → BBK translation

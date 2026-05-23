@@ -23,5 +23,26 @@
         <lang.syntaxHighlighterFactory
             language="BBK"
             implementationClass="com.larena.boxbreaker.plugin.bbk.BbkSyntaxHighlighterFactory"/>
+
+        <!-- Block A: basic autocomplete. -->
+        <!-- (BbkWordsScanner exists in lexer/ and will be wired by BbkFindUsagesProvider in Block B.) -->
+
+        <completion.contributor
+            language="BBK"
+            implementationClass="com.larena.boxbreaker.plugin.bbk.completion.BbkCompletionContributor"/>
+
+        <!-- Block A: live templates. -->
+        <defaultLiveTemplates file="/liveTemplates/Bbk.xml"/>
+        <liveTemplateContext
+            contextId="BBK"
+            implementation="com.larena.boxbreaker.plugin.bbk.templates.BbkLiveTemplateContext"/>
+        <liveTemplateContext
+            contextId="BBK_TOPLEVEL"
+            baseContextId="BBK"
+            implementation="com.larena.boxbreaker.plugin.bbk.templates.BbkTopLevelTemplateContext"/>
+        <liveTemplateContext
+            contextId="BBK_PROC_BODY"
+            baseContextId="BBK"
+            implementation="com.larena.boxbreaker.plugin.bbk.templates.BbkProcedureBodyTemplateContext"/>
     </extensions>
 </idea-plugin>

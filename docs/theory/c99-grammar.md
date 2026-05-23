@@ -1,27 +1,27 @@
-# Gramática de C99
+# C99 Grammar
 
-**Fuente:** ISO/IEC 9899:1999 (C99), basado en el draft público N1256 / Annex A.
-**Propósito:** referencia para el módulo `bbk-compiler` cuando hace lowering de BBK a C99.
-
----
-
-## Convenciones de notación
-
-- `<no-terminal>` — categoría sintáctica (regla de producción).
-- `literal` — terminal exacto (token léxico que aparece tal cual en el código).
-- `a | b` — alternativa: `a` o `b`.
-- `a?` — opcional (0 o 1 ocurrencias).
-- `{ a }` — repetición (0 o más ocurrencias).
-- `<a>_opt` — equivalente a `<a>?`, notación del estándar.
-- `one of: x y z` — atajo para `x | y | z` cuando son terminales sueltos.
+**Source:** ISO/IEC 9899:1999 (C99), based on the public draft N1256 / Annex A.
+**Purpose:** reference for the `bbk-compiler` module when lowering BBK to C99.
 
 ---
 
-## 1. Gramática léxica (tokens)
+## Notation conventions
 
-Los tokens de C99 son seis categorías. Lo que el preprocesador y el compilador consumen.
+- `<non-terminal>` — syntactic category (production rule).
+- `literal` — exact terminal (lexical token that appears verbatim in code).
+- `a | b` — alternative: `a` or `b`.
+- `a?` — optional (0 or 1 occurrences).
+- `{ a }` — repetition (0 or more occurrences).
+- `<a>_opt` — equivalent to `<a>?`, the standard's notation.
+- `one of: x y z` — shorthand for `x | y | z` when they are standalone terminals.
 
-### 1.1 Token general
+---
+
+## 1. Lexical grammar (tokens)
+
+C99 tokens fall into six categories. They are what the preprocessor and the compiler consume.
+
+### 1.1 General token
 
 ```
 <token>
@@ -45,9 +45,9 @@ Los tokens de C99 son seis categorías. Lo que el preprocesador y el compilador 
     _Imaginary
 ```
 
-(`inline`, `restrict`, `_Bool`, `_Complex`, `_Imaginary` son C99-only.)
+(`inline`, `restrict`, `_Bool`, `_Complex`, `_Imaginary` are C99-only.)
 
-### 1.3 Identificadores
+### 1.3 Identifiers
 
 ```
 <identifier>
@@ -78,7 +78,7 @@ Los tokens de C99 son seis categorías. Lo que el preprocesador y el compilador 
     : <hex-digit> <hex-digit> <hex-digit> <hex-digit>
 ```
 
-### 1.5 Constantes
+### 1.5 Constants
 
 ```
 <constant>
@@ -184,7 +184,7 @@ Los tokens de C99 son seis categorías. Lo que el preprocesador y el compilador 
     : <identifier>
 ```
 
-(El identificador debe estar declarado como miembro de un `enum`.)
+(The identifier must be declared as a member of an `enum`.)
 
 #### 1.5.4 Character constants
 
@@ -198,7 +198,7 @@ Los tokens de C99 son seis categorías. Lo que el preprocesador y el compilador 
     | <c-char-sequence> <c-char>
 
 <c-char>
-    : (cualquier carácter del source set salvo: ' \ y newline)
+    : (any character from the source set except: ' \ and newline)
     | <escape-sequence>
 
 <escape-sequence>
@@ -232,7 +232,7 @@ Los tokens de C99 son seis categorías. Lo que el preprocesador y el compilador 
     | <s-char-sequence> <s-char>
 
 <s-char>
-    : (cualquier carácter del source set salvo: " \ y newline)
+    : (any character from the source set except: " \ and newline)
     | <escape-sequence>
 ```
 
@@ -249,21 +249,21 @@ Los tokens de C99 son seis categorías. Lo que el preprocesador y el compilador 
     <:  :>  <%  %>  %:  %:%:     // digraphs
 ```
 
-### 1.8 Comentarios
+### 1.8 Comments
 
-C99 permite ambos estilos:
+C99 allows both styles:
 
 ```
 <comment>
-    : /* (cualquier secuencia de caracteres salvo */) */
-    | //  (cualquier secuencia hasta newline)        // C99-only
+    : /* (any character sequence except */) */
+    | //  (any sequence up to newline)                // C99-only
 ```
 
 ---
 
-## 2. Gramática sintáctica (phrase structure)
+## 2. Syntactic grammar (phrase structure)
 
-### 2.1 Expresiones
+### 2.1 Expressions
 
 #### 2.1.1 Primary expressions
 
@@ -429,7 +429,7 @@ C99 permite ambos estilos:
 
 ---
 
-### 2.2 Declaraciones
+### 2.2 Declarations
 
 ```
 <declaration>
@@ -532,7 +532,7 @@ C99 permite ambos estilos:
     const  restrict  volatile
 ```
 
-(`restrict` es C99-only.)
+(`restrict` is C99-only.)
 
 #### 2.2.6 Function specifiers
 
@@ -582,7 +582,7 @@ C99 permite ambos estilos:
     | <identifier-list> , <identifier>
 ```
 
-#### 2.2.8 Type names y abstract declarators
+#### 2.2.8 Type names and abstract declarators
 
 ```
 <type-name>
@@ -661,12 +661,12 @@ C99 permite ambos estilos:
     : <block-item>
     | <block-item-list> <block-item>
 
-<block-item>                                                // C99: mezcla libre
+<block-item>                                                // C99: free mixing
     : <declaration>
     | <statement>
 ```
 
-(En C89 las declaraciones tenían que ir al principio del bloque. En C99 pueden intercalarse con statements.)
+(In C89 declarations had to go at the beginning of the block. In C99 they can be interleaved with statements.)
 
 #### 2.3.3 Expression statement
 
@@ -694,7 +694,7 @@ C99 permite ambos estilos:
     | for ( <declaration> <expression>? ; <expression>? ) <statement>    // C99
 ```
 
-(C99 permite declarar la variable en la cláusula init del `for`.)
+(C99 allows declaring the variable in the init clause of the `for`.)
 
 #### 2.3.6 Jump statements
 
@@ -727,13 +727,13 @@ C99 permite ambos estilos:
     | <declaration-list> <declaration>
 ```
 
-(`<declaration-list>` antes del cuerpo es solo para el estilo viejo de declaración de parámetros K&R.)
+(`<declaration-list>` before the body is only for the old-style K&R parameter declaration.)
 
 ---
 
-## 3. Gramática del preprocesador
+## 3. Preprocessor grammar
 
-Conceptualmente separada del compilador. El preprocesador opera sobre tokens y produce tokens.
+Conceptually separate from the compiler. The preprocessor operates over tokens and produces tokens.
 
 ```
 <preprocessing-file>
@@ -802,107 +802,107 @@ Conceptualmente separada del compilador. El preprocesador opera sobre tokens y p
     | <character-constant>
     | <string-literal>
     | <punctuator>
-    | (cualquier carácter no-blanco que no sea ninguno de los anteriores)
+    | (any non-whitespace character that is none of the above)
 ```
 
 ---
 
-## 4. Reglas semánticas — síntesis
+## 4. Semantic rules — synthesis
 
-Las reglas semánticas no son BNFeables. Resumen de las categorías más relevantes del estándar C99 para el lowering de BBK:
+Semantic rules are not expressible in BNF. Summary of the most relevant categories of the C99 standard for BBK lowering:
 
-### 4.1 Tipos (§6.2.5)
+### 4.1 Types (§6.2.5)
 
-- **Tipos básicos:** `char`, `signed/unsigned char`, `short`, `int`, `long`, `long long` (C99), `_Bool` (C99), `float`, `double`, `long double`, `_Complex`/`_Imaginary` (C99).
-- **Tipos derivados:** punteros, arrays, structs, unions, funciones.
-- **Tipos enumerados:** compatibles con un tipo entero subyacente (implementation-defined).
-- **Tipos calificados:** `const`, `volatile`, `restrict` (C99). El calificador altera el comportamiento pero no la representación.
+- **Basic types:** `char`, `signed/unsigned char`, `short`, `int`, `long`, `long long` (C99), `_Bool` (C99), `float`, `double`, `long double`, `_Complex`/`_Imaginary` (C99).
+- **Derived types:** pointers, arrays, structs, unions, functions.
+- **Enumerated types:** compatible with an underlying integer type (implementation-defined).
+- **Qualified types:** `const`, `volatile`, `restrict` (C99). The qualifier alters behavior but not representation.
 
-### 4.2 Conversiones (§6.3)
+### 4.2 Conversions (§6.3)
 
-- **Promociones enteras:** `char`, `short` y bitfields se promueven a `int` (o `unsigned int`) en contextos aritméticos.
-- **Conversiones aritméticas usuales:** dado un operador binario aritmético, ambos operandos se convierten a un tipo común (jerarquía: `long double` > `double` > `float` > integer types con ranking).
-- **Punteros:** `NULL` es un puntero constante de valor cero. Cualquier puntero a objeto puede convertirse a `void *` y volver sin pérdida.
+- **Integer promotions:** `char`, `short`, and bitfields are promoted to `int` (or `unsigned int`) in arithmetic contexts.
+- **Usual arithmetic conversions:** given a binary arithmetic operator, both operands are converted to a common type (hierarchy: `long double` > `double` > `float` > integer types by ranking).
+- **Pointers:** `NULL` is a pointer constant of value zero. Any pointer to an object can be converted to `void *` and back without loss.
 
-### 4.3 Lvalues, rvalues, arrays decay (§6.3.2)
+### 4.3 Lvalues, rvalues, array decay (§6.3.2)
 
-- Un **lvalue** es una expresión con almacenamiento accesible (no necesariamente modificable; ej. `const int x` es lvalue pero no modificable).
-- **Array decay:** salvo en contextos específicos (`sizeof`, `&`, inicialización), un array se convierte automáticamente a puntero al primer elemento.
-- **Function decay:** un identificador de función se convierte automáticamente a puntero a función.
+- An **lvalue** is an expression with accessible storage (not necessarily modifiable; e.g. `const int x` is an lvalue but not modifiable).
+- **Array decay:** except in specific contexts (`sizeof`, `&`, initialization), an array is automatically converted to a pointer to its first element.
+- **Function decay:** a function identifier is automatically converted to a function pointer.
 
 ### 4.4 Sequence points (§6.5)
 
-Puntos donde todos los side effects previos están completados:
-- Después del primer operando de `&&`, `||`, `?:`, `,` (operador).
-- Al final de cada expresión completa (statement).
-- Al llamar a una función (después de evaluar todos los argumentos).
-- Al retornar de una función.
+Points at which all prior side effects are completed:
+- After the first operand of `&&`, `||`, `?:`, `,` (operator).
+- At the end of each full expression (statement).
+- When calling a function (after evaluating all arguments).
+- When returning from a function.
 
-Modificar el mismo objeto más de una vez entre dos sequence points es **undefined behavior** (ej. `i = i++`).
+Modifying the same object more than once between two sequence points is **undefined behavior** (e.g. `i = i++`).
 
-### 4.5 Inicialización (§6.7.8)
+### 4.5 Initialization (§6.7.8)
 
-- Variables `static` y globales sin inicializador explícito → inicializadas a cero.
-- Variables `auto` sin inicializador → indeterminadas.
-- C99 permite inicializadores designados: `struct Foo f = { .x = 1, .y = 2 };` y `int a[10] = { [3] = 5 };`.
-- C99 permite **compound literals**: `(struct Foo){ .x = 1 }` crea un objeto temporal.
+- `static` and global variables without an explicit initializer → initialized to zero.
+- `auto` variables without an initializer → indeterminate.
+- C99 allows designated initializers: `struct Foo f = { .x = 1, .y = 2 };` and `int a[10] = { [3] = 5 };`.
+- C99 allows **compound literals**: `(struct Foo){ .x = 1 }` creates a temporary object.
 
 ### 4.6 Storage durations (§6.2.4)
 
-- **Static:** vive toda la ejecución del programa. Variables globales y `static` locales.
-- **Automatic:** vive desde la entrada al bloque hasta su salida. Variables locales `auto` (default) y `register`.
-- **Allocated:** vive entre `malloc` y `free`.
+- **Static:** lives for the entire execution of the program. Global and `static` local variables.
+- **Automatic:** lives from entry to the block until exit. Local `auto` variables (default) and `register`.
+- **Allocated:** lives between `malloc` and `free`.
 
 ### 4.7 Linkage (§6.2.2)
 
-- **External:** visible entre translation units (`extern`, default para funciones y variables globales).
-- **Internal:** visible solo en su translation unit (`static` en scope global).
-- **No linkage:** variables locales y parámetros.
+- **External:** visible across translation units (`extern`, default for functions and global variables).
+- **Internal:** visible only within its translation unit (`static` at global scope).
+- **No linkage:** local variables and parameters.
 
 ### 4.8 Function calls (§6.5.2.2)
 
-- Argumentos evaluados en orden no especificado (no hay sequence point entre ellos, salvo lo introducido por `&&`/`||`/`?:`/`,`).
-- Tipos de argumentos se convierten al tipo declarado del parámetro (default argument promotions si no hay prototipo).
-- C99: la llamada a función con declarador implícito (sin prototipo previo) ya no es legal.
+- Arguments are evaluated in unspecified order (no sequence point between them, except as introduced by `&&`/`||`/`?:`/`,`).
+- Argument types are converted to the declared type of the parameter (default argument promotions if no prototype is present).
+- C99: calling a function with an implicit declarator (without a prior prototype) is no longer legal.
 
 ### 4.9 `inline` (C99, §6.7.4)
 
-- Sugiere al compilador inlinear la función.
-- Una función `inline` puede coexistir con una definición externa (con `extern inline`).
-- Sin garantía de inlining; el estándar solo define la semántica.
+- Suggests to the compiler that the function be inlined.
+- An `inline` function may coexist with an external definition (using `extern inline`).
+- No inlining is guaranteed; the standard only defines the semantics.
 
 ### 4.10 Variable-length arrays (C99, §6.7.5.2)
 
-- `int a[n]` donde `n` no es constante en tiempo de compilación.
-- Solo permitidos en scope automático (locales).
-- El tamaño se evalúa al entrar al bloque.
+- `int a[n]` where `n` is not a compile-time constant.
+- Only allowed in automatic scope (locals).
+- The size is evaluated upon entry to the block.
 
 ---
 
-## 5. Diferencias clave C99 vs C89
+## 5. Key differences C99 vs C89
 
-Resumen de lo que C99 agregó (relevante para el lowering desde BBK):
+Summary of what C99 added (relevant for lowering from BBK):
 
-| Feature | Referencia |
+| Feature | Reference |
 |---|---|
-| `//` comentarios | §6.4.9 |
-| Tipos `long long`, `_Bool`, `_Complex`, `_Imaginary` | §6.2.5 |
-| Calificador `restrict` | §6.7.3 |
-| Función `inline` | §6.7.4 |
-| Mezcla libre de declaraciones y statements en bloques | §6.8.2 |
-| Declaración en cláusula init de `for` | §6.8.5.3 |
+| `//` comments | §6.4.9 |
+| `long long`, `_Bool`, `_Complex`, `_Imaginary` types | §6.2.5 |
+| `restrict` qualifier | §6.7.3 |
+| `inline` function | §6.7.4 |
+| Free mixing of declarations and statements in blocks | §6.8.2 |
+| Declaration in the init clause of `for` | §6.8.5.3 |
 | VLAs (variable-length arrays) | §6.7.5.2 |
 | Designated initializers | §6.7.8 |
 | Compound literals | §6.5.2.5 |
-| Variadic macros (`...` en `#define`) | §6.10.3 |
+| Variadic macros (`...` in `#define`) | §6.10.3 |
 | Hex floating constants (`0x1.fp3`) | §6.4.4.2 |
 | `_Pragma` operator | §6.10.9 |
-| Headers nuevos: `<stdbool.h>`, `<stdint.h>`, `<inttypes.h>`, `<tgmath.h>`, `<complex.h>`, `<fenv.h>` | §7 |
+| New headers: `<stdbool.h>`, `<stdint.h>`, `<inttypes.h>`, `<tgmath.h>`, `<complex.h>`, `<fenv.h>` | §7 |
 
 ---
 
-## Referencias
+## References
 
-- ISO/IEC 9899:1999 — *Programming languages — C* (norma oficial, paga).
-- Draft público N1256 — committee draft de C99 con TC1, TC2, TC3 incorporados. Es la referencia gratuita más cercana al estándar final: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
-- Annex A del estándar contiene la gramática consolidada (lo que se replica aquí).
+- ISO/IEC 9899:1999 — *Programming languages — C* (official standard, paid).
+- Public draft N1256 — committee draft of C99 with TC1, TC2, TC3 incorporated. The closest free reference to the final standard: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
+- Annex A of the standard contains the consolidated grammar (which is replicated here).
