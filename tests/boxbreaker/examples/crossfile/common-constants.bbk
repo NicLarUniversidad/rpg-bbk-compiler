@@ -1,0 +1,8 @@
+// Module-level constants shared across the project.
+// Used to verify that DCL-C declarations are reachable cross-file via the stub index.
+
+DCL-C MAX_RETRIES   5;
+DCL-C COMPANY_NAME  "Acme Corporation";
+DCL-C PI            3.14159d;
+DCL-C IS_DEBUG      true;
+DCL-C DEFAULT_PORT  8080;

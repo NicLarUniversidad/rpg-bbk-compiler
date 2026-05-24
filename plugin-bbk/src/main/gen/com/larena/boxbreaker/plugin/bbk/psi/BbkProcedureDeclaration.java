@@ -5,8 +5,10 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.StubBasedPsiElement;
+import com.larena.boxbreaker.plugin.bbk.stub.BbkProcedureDeclarationStub;
 
-public interface BbkProcedureDeclaration extends PsiNamedElement {
+public interface BbkProcedureDeclaration extends PsiNamedElement, StubBasedPsiElement<BbkProcedureDeclarationStub> {
 
   @Nullable
   BbkBlockStatement getBlockStatement();

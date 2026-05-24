@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkFileOpStatementImpl extends ASTWrapperPsiElement implements BbkFileOpStatement {
+public class BbkFileOpStatementImpl extends BbkPsiElementBase implements BbkFileOpStatement {
 
-  public BbkFileOpStatementImpl(@NotNull ASTNode node) {
+  public BbkFileOpStatementImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,85 +30,85 @@ public class BbkFileOpStatementImpl extends ASTWrapperPsiElement implements BbkF
   @Override
   @Nullable
   public BbkChainOp getChainOp() {
-    return findChildByClass(BbkChainOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkChainOp.class);
   }
 
   @Override
   @Nullable
   public BbkCloseOp getCloseOp() {
-    return findChildByClass(BbkCloseOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkCloseOp.class);
   }
 
   @Override
   @Nullable
   public BbkDeleteOp getDeleteOp() {
-    return findChildByClass(BbkDeleteOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkDeleteOp.class);
   }
 
   @Override
   @Nullable
   public BbkExfmtOp getExfmtOp() {
-    return findChildByClass(BbkExfmtOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExfmtOp.class);
   }
 
   @Override
   @Nullable
   public BbkOpenOp getOpenOp() {
-    return findChildByClass(BbkOpenOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkOpenOp.class);
   }
 
   @Override
   @Nullable
   public BbkReadOp getReadOp() {
-    return findChildByClass(BbkReadOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkReadOp.class);
   }
 
   @Override
   @Nullable
   public BbkReadeOp getReadeOp() {
-    return findChildByClass(BbkReadeOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkReadeOp.class);
   }
 
   @Override
   @Nullable
   public BbkReadpOp getReadpOp() {
-    return findChildByClass(BbkReadpOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkReadpOp.class);
   }
 
   @Override
   @Nullable
   public BbkReadpeOp getReadpeOp() {
-    return findChildByClass(BbkReadpeOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkReadpeOp.class);
   }
 
   @Override
   @Nullable
   public BbkSetgtOp getSetgtOp() {
-    return findChildByClass(BbkSetgtOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkSetgtOp.class);
   }
 
   @Override
   @Nullable
   public BbkSetllOp getSetllOp() {
-    return findChildByClass(BbkSetllOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkSetllOp.class);
   }
 
   @Override
   @Nullable
   public BbkUnlockOp getUnlockOp() {
-    return findChildByClass(BbkUnlockOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkUnlockOp.class);
   }
 
   @Override
   @Nullable
   public BbkUpdateOp getUpdateOp() {
-    return findChildByClass(BbkUpdateOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkUpdateOp.class);
   }
 
   @Override
   @Nullable
   public BbkWriteOp getWriteOp() {
-    return findChildByClass(BbkWriteOp.class);
+    return PsiTreeUtil.getChildOfType(this, BbkWriteOp.class);
   }
 
 }

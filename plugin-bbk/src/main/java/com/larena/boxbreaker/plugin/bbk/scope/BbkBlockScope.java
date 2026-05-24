@@ -6,6 +6,7 @@ import com.larena.boxbreaker.plugin.bbk.psi.BbkBlockStatement;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkVariableDeclaration;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkConstantDeclaration;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkDataStructureDeclaration;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkSubroutineDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,7 +57,8 @@ public class BbkBlockScope implements BbkScope {
             }
             if (child instanceof BbkVariableDeclaration
                 || child instanceof BbkConstantDeclaration
-                || child instanceof BbkDataStructureDeclaration) {
+                || child instanceof BbkDataStructureDeclaration
+                || child instanceof BbkSubroutineDefinition) {
                 out.add((PsiNamedElement) child);
             } else {
                 // TODO Block C: surface `for (DCL-S i ...; ...; ...)` inline declarations as PsiNamedElement.

@@ -10,13 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Scope of the enclosing {@link BbkProcedureDeclaration}: inline parameters plus the
- * top-level locals declared in the procedure body (variables, constants, data
- * structures, subroutines).
+ * Scope of the enclosing {@link BbkProcedureDeclaration}: ONLY the inline parameters.
  *
- * <p>Per decision #1 of {@code reference-scope/classes.md} §7, V1 is permissive:
- * forward references are allowed. Locals are visible anywhere inside the procedure,
- * not only from their line onward.
+ * <p>Locals declared in the procedure body (DCL-S, DCL-C, DCL-DS, DCL subroutines) are
+ * handled by the {@link BbkBlockScope} that wraps the procedure's body, NOT by this
+ * scope. Walking both would double-list every local — that is what made Ctrl+B show a
+ * "Choose declaration" popup with duplicate entries.
  */
 public class BbkProcedureScope implements BbkScope {
 
@@ -32,34 +31,11 @@ public class BbkProcedureScope implements BbkScope {
     public @NotNull List<PsiNamedElement> getDeclarations() {
         List<PsiNamedElement> out = new ArrayList<>();
 
-        // Inline parameters
+        // Inline parameters only — body locals are reached via BbkBlockScope(s).
         BbkInlineParamList paramList = PsiTreeUtil.findChildOfType(procedure, BbkInlineParamList.class);
         if (paramList != null) {
             for (BbkInlineParam p : PsiTreeUtil.findChildrenOfType(paramList, BbkInlineParam.class)) {
                 out.add(p);
-            }
-        }
-
-        // Locals: variables, constants, DSs and subroutines inside the procedure body.
-        BbkBlockStatement body = PsiTreeUtil.findChildOfType(procedure, BbkBlockStatement.class);
-        if (body != null) {
-            for (BbkVariableDeclaration v : PsiTreeUtil.findChildrenOfType(body, BbkVariableDeclaration.class)) {
-                out.add(v);
-            }
-            for (BbkConstantDeclaration c : PsiTreeUtil.findChildrenOfType(body, BbkConstantDeclaration.class)) {
-                out.add(c);
-            }
-            for (BbkDataStructureDeclaration ds : PsiTreeUtil.findChildrenOfType(body, BbkDataStructureDeclaration.class)) {
-                out.add(ds);
-                // Non-qualified DS subfields flattened, like module scope.
-                if (!isQualified(ds)) {
-                    for (BbkDsSubfield s : PsiTreeUtil.findChildrenOfType(ds, BbkDsSubfield.class)) {
-                        out.add(s);
-                    }
-                }
-            }
-            for (BbkSubroutineDefinition sr : PsiTreeUtil.findChildrenOfType(body, BbkSubroutineDefinition.class)) {
-                out.add(sr);
             }
         }
 
@@ -69,14 +45,5 @@ public class BbkProcedureScope implements BbkScope {
     @Override
     public @Nullable BbkScope getParent() {
         return parent;
-    }
-
-    private static boolean isQualified(@NotNull BbkDataStructureDeclaration ds) {
-        for (BbkDsModifier mod : PsiTreeUtil.findChildrenOfType(ds, BbkDsModifier.class)) {
-            if (mod.getText() != null && mod.getText().toUpperCase().startsWith("QUALIFIED")) {
-                return true;
-            }
-        }
-        return false;
     }
 }

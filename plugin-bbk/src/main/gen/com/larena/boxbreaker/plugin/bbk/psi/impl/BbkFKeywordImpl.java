@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkFKeywordImpl extends ASTWrapperPsiElement implements BbkFKeyword {
+public class BbkFKeywordImpl extends BbkPsiElementBase implements BbkFKeyword {
 
-  public BbkFKeywordImpl(@NotNull ASTNode node) {
+  public BbkFKeywordImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,49 +30,49 @@ public class BbkFKeywordImpl extends ASTWrapperPsiElement implements BbkFKeyword
   @Override
   @Nullable
   public BbkExtfileFKeyword getExtfileFKeyword() {
-    return findChildByClass(BbkExtfileFKeyword.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExtfileFKeyword.class);
   }
 
   @Override
   @Nullable
   public BbkExtnameFKeyword getExtnameFKeyword() {
-    return findChildByClass(BbkExtnameFKeyword.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExtnameFKeyword.class);
   }
 
   @Override
   @Nullable
   public BbkInddsFKeyword getInddsFKeyword() {
-    return findChildByClass(BbkInddsFKeyword.class);
+    return PsiTreeUtil.getChildOfType(this, BbkInddsFKeyword.class);
   }
 
   @Override
   @Nullable
   public BbkInfdsFKeyword getInfdsFKeyword() {
-    return findChildByClass(BbkInfdsFKeyword.class);
+    return PsiTreeUtil.getChildOfType(this, BbkInfdsFKeyword.class);
   }
 
   @Override
   @Nullable
   public BbkPrefixFKeyword getPrefixFKeyword() {
-    return findChildByClass(BbkPrefixFKeyword.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPrefixFKeyword.class);
   }
 
   @Override
   @Nullable
   public BbkRenameFKeyword getRenameFKeyword() {
-    return findChildByClass(BbkRenameFKeyword.class);
+    return PsiTreeUtil.getChildOfType(this, BbkRenameFKeyword.class);
   }
 
   @Override
   @Nullable
   public BbkSimpleFKeyword getSimpleFKeyword() {
-    return findChildByClass(BbkSimpleFKeyword.class);
+    return PsiTreeUtil.getChildOfType(this, BbkSimpleFKeyword.class);
   }
 
   @Override
   @Nullable
   public BbkUsageFKeyword getUsageFKeyword() {
-    return findChildByClass(BbkUsageFKeyword.class);
+    return PsiTreeUtil.getChildOfType(this, BbkUsageFKeyword.class);
   }
 
 }

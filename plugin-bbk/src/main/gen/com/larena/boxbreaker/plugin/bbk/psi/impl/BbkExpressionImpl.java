@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkExpressionImpl extends ASTWrapperPsiElement implements BbkExpression {
+public class BbkExpressionImpl extends BbkPsiElementBase implements BbkExpression {
 
-  public BbkExpressionImpl(@NotNull ASTNode node) {
+  public BbkExpressionImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,7 +30,7 @@ public class BbkExpressionImpl extends ASTWrapperPsiElement implements BbkExpres
   @Override
   @NotNull
   public BbkTernaryExpression getTernaryExpression() {
-    return findNotNullChildByClass(BbkTernaryExpression.class);
+    return notNullChild(PsiTreeUtil.getChildOfType(this, BbkTernaryExpression.class));
   }
 
 }

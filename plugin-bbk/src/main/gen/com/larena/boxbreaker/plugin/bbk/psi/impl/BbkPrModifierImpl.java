@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkPrModifierImpl extends ASTWrapperPsiElement implements BbkPrModifier {
+public class BbkPrModifierImpl extends BbkPsiElementBase implements BbkPrModifier {
 
-  public BbkPrModifierImpl(@NotNull ASTNode node) {
+  public BbkPrModifierImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,13 +30,13 @@ public class BbkPrModifierImpl extends ASTWrapperPsiElement implements BbkPrModi
   @Override
   @Nullable
   public BbkExtpgmModifier getExtpgmModifier() {
-    return findChildByClass(BbkExtpgmModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExtpgmModifier.class);
   }
 
   @Override
   @Nullable
   public BbkExtprocModifier getExtprocModifier() {
-    return findChildByClass(BbkExtprocModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExtprocModifier.class);
   }
 
 }

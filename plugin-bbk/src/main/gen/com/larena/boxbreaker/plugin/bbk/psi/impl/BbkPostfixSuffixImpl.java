@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkPostfixSuffixImpl extends ASTWrapperPsiElement implements BbkPostfixSuffix {
+public class BbkPostfixSuffixImpl extends BbkPsiElementBase implements BbkPostfixSuffix {
 
-  public BbkPostfixSuffixImpl(@NotNull ASTNode node) {
+  public BbkPostfixSuffixImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,13 +30,13 @@ public class BbkPostfixSuffixImpl extends ASTWrapperPsiElement implements BbkPos
   @Override
   @Nullable
   public BbkArgumentList getArgumentList() {
-    return findChildByClass(BbkArgumentList.class);
+    return PsiTreeUtil.getChildOfType(this, BbkArgumentList.class);
   }
 
   @Override
   @Nullable
   public BbkSubscriptList getSubscriptList() {
-    return findChildByClass(BbkSubscriptList.class);
+    return PsiTreeUtil.getChildOfType(this, BbkSubscriptList.class);
   }
 
   @Override

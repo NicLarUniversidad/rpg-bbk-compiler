@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkVarModifierImpl extends ASTWrapperPsiElement implements BbkVarModifier {
+public class BbkVarModifierImpl extends BbkPsiElementBase implements BbkVarModifier {
 
-  public BbkVarModifierImpl(@NotNull ASTNode node) {
+  public BbkVarModifierImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,49 +30,49 @@ public class BbkVarModifierImpl extends ASTWrapperPsiElement implements BbkVarMo
   @Override
   @Nullable
   public BbkBasedModifier getBasedModifier() {
-    return findChildByClass(BbkBasedModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkBasedModifier.class);
   }
 
   @Override
   @Nullable
   public BbkDimModifier getDimModifier() {
-    return findChildByClass(BbkDimModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkDimModifier.class);
   }
 
   @Override
   @Nullable
   public BbkExportModifier getExportModifier() {
-    return findChildByClass(BbkExportModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExportModifier.class);
   }
 
   @Override
   @Nullable
   public BbkInzModifier getInzModifier() {
-    return findChildByClass(BbkInzModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkInzModifier.class);
   }
 
   @Override
   @Nullable
   public BbkOverlayModifier getOverlayModifier() {
-    return findChildByClass(BbkOverlayModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkOverlayModifier.class);
   }
 
   @Override
   @Nullable
   public BbkPosModifier getPosModifier() {
-    return findChildByClass(BbkPosModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPosModifier.class);
   }
 
   @Override
   @Nullable
   public BbkQualifiedModifier getQualifiedModifier() {
-    return findChildByClass(BbkQualifiedModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkQualifiedModifier.class);
   }
 
   @Override
   @Nullable
   public BbkStaticModifier getStaticModifier() {
-    return findChildByClass(BbkStaticModifier.class);
+    return PsiTreeUtil.getChildOfType(this, BbkStaticModifier.class);
   }
 
 }

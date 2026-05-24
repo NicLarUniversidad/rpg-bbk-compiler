@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkReturnTypeImpl extends ASTWrapperPsiElement implements BbkReturnType {
+public class BbkReturnTypeImpl extends BbkPsiElementBase implements BbkReturnType {
 
-  public BbkReturnTypeImpl(@NotNull ASTNode node) {
+  public BbkReturnTypeImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,7 +30,7 @@ public class BbkReturnTypeImpl extends ASTWrapperPsiElement implements BbkReturn
   @Override
   @Nullable
   public BbkTypeSpecification getTypeSpecification() {
-    return findChildByClass(BbkTypeSpecification.class);
+    return PsiTreeUtil.getChildOfType(this, BbkTypeSpecification.class);
   }
 
 }

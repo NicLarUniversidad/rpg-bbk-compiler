@@ -5,8 +5,10 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.StubBasedPsiElement;
+import com.larena.boxbreaker.plugin.bbk.stub.BbkConstantDeclarationStub;
 
-public interface BbkConstantDeclaration extends PsiNamedElement {
+public interface BbkConstantDeclaration extends PsiNamedElement, StubBasedPsiElement<BbkConstantDeclarationStub> {
 
   @Nullable
   BbkConstantValue getConstantValue();

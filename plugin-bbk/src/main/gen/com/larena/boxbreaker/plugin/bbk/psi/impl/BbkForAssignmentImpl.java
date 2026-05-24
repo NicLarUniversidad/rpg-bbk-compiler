@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkForAssignmentImpl extends ASTWrapperPsiElement implements BbkForAssignment {
+public class BbkForAssignmentImpl extends BbkPsiElementBase implements BbkForAssignment {
 
-  public BbkForAssignmentImpl(@NotNull ASTNode node) {
+  public BbkForAssignmentImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,19 +30,19 @@ public class BbkForAssignmentImpl extends ASTWrapperPsiElement implements BbkFor
   @Override
   @NotNull
   public BbkAssignmentOp getAssignmentOp() {
-    return findNotNullChildByClass(BbkAssignmentOp.class);
+    return notNullChild(PsiTreeUtil.getChildOfType(this, BbkAssignmentOp.class));
   }
 
   @Override
   @Nullable
   public BbkExpression getExpression() {
-    return findChildByClass(BbkExpression.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExpression.class);
   }
 
   @Override
   @NotNull
   public BbkLvalue getLvalue() {
-    return findNotNullChildByClass(BbkLvalue.class);
+    return notNullChild(PsiTreeUtil.getChildOfType(this, BbkLvalue.class));
   }
 
 }

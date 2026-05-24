@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkStatementImpl extends ASTWrapperPsiElement implements BbkStatement {
+public class BbkStatementImpl extends BbkPsiElementBase implements BbkStatement {
 
-  public BbkStatementImpl(@NotNull ASTNode node) {
+  public BbkStatementImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,85 +30,85 @@ public class BbkStatementImpl extends ASTWrapperPsiElement implements BbkStateme
   @Override
   @Nullable
   public BbkBreakStatement getBreakStatement() {
-    return findChildByClass(BbkBreakStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkBreakStatement.class);
   }
 
   @Override
   @Nullable
   public BbkCallpStatement getCallpStatement() {
-    return findChildByClass(BbkCallpStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkCallpStatement.class);
   }
 
   @Override
   @Nullable
   public BbkContinueStatement getContinueStatement() {
-    return findChildByClass(BbkContinueStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkContinueStatement.class);
   }
 
   @Override
   @Nullable
   public BbkDoWhileStatement getDoWhileStatement() {
-    return findChildByClass(BbkDoWhileStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkDoWhileStatement.class);
   }
 
   @Override
   @Nullable
   public BbkExpressionStatement getExpressionStatement() {
-    return findChildByClass(BbkExpressionStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExpressionStatement.class);
   }
 
   @Override
   @Nullable
   public BbkExsrStatement getExsrStatement() {
-    return findChildByClass(BbkExsrStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExsrStatement.class);
   }
 
   @Override
   @Nullable
   public BbkFileOpStatement getFileOpStatement() {
-    return findChildByClass(BbkFileOpStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkFileOpStatement.class);
   }
 
   @Override
   @Nullable
   public BbkForStatement getForStatement() {
-    return findChildByClass(BbkForStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkForStatement.class);
   }
 
   @Override
   @Nullable
   public BbkIfStatement getIfStatement() {
-    return findChildByClass(BbkIfStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkIfStatement.class);
   }
 
   @Override
   @Nullable
   public BbkLeavesrStatement getLeavesrStatement() {
-    return findChildByClass(BbkLeavesrStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkLeavesrStatement.class);
   }
 
   @Override
   @Nullable
   public BbkMonitorStatement getMonitorStatement() {
-    return findChildByClass(BbkMonitorStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkMonitorStatement.class);
   }
 
   @Override
   @Nullable
   public BbkReturnStatement getReturnStatement() {
-    return findChildByClass(BbkReturnStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkReturnStatement.class);
   }
 
   @Override
   @Nullable
   public BbkSelectStatement getSelectStatement() {
-    return findChildByClass(BbkSelectStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkSelectStatement.class);
   }
 
   @Override
   @Nullable
   public BbkWhileStatement getWhileStatement() {
-    return findChildByClass(BbkWhileStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkWhileStatement.class);
   }
 
 }

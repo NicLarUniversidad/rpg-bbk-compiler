@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkTernaryExpressionImpl extends ASTWrapperPsiElement implements BbkTernaryExpression {
+public class BbkTernaryExpressionImpl extends BbkPsiElementBase implements BbkTernaryExpression {
 
-  public BbkTernaryExpressionImpl(@NotNull ASTNode node) {
+  public BbkTernaryExpressionImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,19 +30,19 @@ public class BbkTernaryExpressionImpl extends ASTWrapperPsiElement implements Bb
   @Override
   @Nullable
   public BbkExpression getExpression() {
-    return findChildByClass(BbkExpression.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExpression.class);
   }
 
   @Override
   @NotNull
   public BbkLogicalOrExpression getLogicalOrExpression() {
-    return findNotNullChildByClass(BbkLogicalOrExpression.class);
+    return notNullChild(PsiTreeUtil.getChildOfType(this, BbkLogicalOrExpression.class));
   }
 
   @Override
   @Nullable
   public BbkTernaryExpression getTernaryExpression() {
-    return findChildByClass(BbkTernaryExpression.class);
+    return PsiTreeUtil.getChildOfType(this, BbkTernaryExpression.class);
   }
 
 }

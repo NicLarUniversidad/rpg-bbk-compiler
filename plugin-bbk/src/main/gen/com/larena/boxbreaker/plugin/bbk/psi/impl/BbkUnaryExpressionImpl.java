@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkUnaryExpressionImpl extends ASTWrapperPsiElement implements BbkUnaryExpression {
+public class BbkUnaryExpressionImpl extends BbkPsiElementBase implements BbkUnaryExpression {
 
-  public BbkUnaryExpressionImpl(@NotNull ASTNode node) {
+  public BbkUnaryExpressionImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,13 +30,13 @@ public class BbkUnaryExpressionImpl extends ASTWrapperPsiElement implements BbkU
   @Override
   @Nullable
   public BbkPostfixExpression getPostfixExpression() {
-    return findChildByClass(BbkPostfixExpression.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPostfixExpression.class);
   }
 
   @Override
   @Nullable
   public BbkUnaryExpression getUnaryExpression() {
-    return findChildByClass(BbkUnaryExpression.class);
+    return PsiTreeUtil.getChildOfType(this, BbkUnaryExpression.class);
   }
 
 }

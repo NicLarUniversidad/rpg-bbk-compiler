@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkRelationalExpressionImpl extends ASTWrapperPsiElement implements BbkRelationalExpression {
+public class BbkRelationalExpressionImpl extends BbkPsiElementBase implements BbkRelationalExpression {
 
-  public BbkRelationalExpressionImpl(@NotNull ASTNode node) {
+  public BbkRelationalExpressionImpl(ASTNode node) {
     super(node);
   }
 

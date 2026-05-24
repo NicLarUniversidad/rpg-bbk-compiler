@@ -8,13 +8,19 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.larena.boxbreaker.plugin.bbk.psi.BbkNamedElementMixin;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkStubBasedNamedElementMixin;
+import com.larena.boxbreaker.plugin.bbk.stub.BbkConstantDeclarationStub;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
+import com.intellij.psi.stubs.IStubElementType;
 
-public class BbkConstantDeclarationImpl extends BbkNamedElementMixin implements BbkConstantDeclaration {
+public class BbkConstantDeclarationImpl extends BbkStubBasedNamedElementMixin<BbkConstantDeclarationStub> implements BbkConstantDeclaration {
 
   public BbkConstantDeclarationImpl(ASTNode node) {
     super(node);
+  }
+
+  public BbkConstantDeclarationImpl(BbkConstantDeclarationStub stub, IStubElementType stubType) {
+    super(stub, stubType);
   }
 
   public void accept(@NotNull BbkVisitor visitor) {
@@ -30,7 +36,7 @@ public class BbkConstantDeclarationImpl extends BbkNamedElementMixin implements 
   @Override
   @Nullable
   public BbkConstantValue getConstantValue() {
-    return findChildByClass(BbkConstantValue.class);
+    return PsiTreeUtil.getChildOfType(this, BbkConstantValue.class);
   }
 
   @Override

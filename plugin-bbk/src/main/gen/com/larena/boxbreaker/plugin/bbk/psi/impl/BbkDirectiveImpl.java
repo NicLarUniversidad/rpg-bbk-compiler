@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkDirectiveImpl extends ASTWrapperPsiElement implements BbkDirective {
+public class BbkDirectiveImpl extends BbkPsiElementBase implements BbkDirective {
 
-  public BbkDirectiveImpl(@NotNull ASTNode node) {
+  public BbkDirectiveImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,49 +30,49 @@ public class BbkDirectiveImpl extends ASTWrapperPsiElement implements BbkDirecti
   @Override
   @Nullable
   public BbkPreDefineDirective getPreDefineDirective() {
-    return findChildByClass(BbkPreDefineDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPreDefineDirective.class);
   }
 
   @Override
   @Nullable
   public BbkPreElseDirective getPreElseDirective() {
-    return findChildByClass(BbkPreElseDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPreElseDirective.class);
   }
 
   @Override
   @Nullable
   public BbkPreElseifDirective getPreElseifDirective() {
-    return findChildByClass(BbkPreElseifDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPreElseifDirective.class);
   }
 
   @Override
   @Nullable
   public BbkPreEndifDirective getPreEndifDirective() {
-    return findChildByClass(BbkPreEndifDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPreEndifDirective.class);
   }
 
   @Override
   @Nullable
   public BbkPreEofDirective getPreEofDirective() {
-    return findChildByClass(BbkPreEofDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPreEofDirective.class);
   }
 
   @Override
   @Nullable
   public BbkPreIfDirective getPreIfDirective() {
-    return findChildByClass(BbkPreIfDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPreIfDirective.class);
   }
 
   @Override
   @Nullable
   public BbkPreIncludeDirective getPreIncludeDirective() {
-    return findChildByClass(BbkPreIncludeDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPreIncludeDirective.class);
   }
 
   @Override
   @Nullable
   public BbkPreUndefineDirective getPreUndefineDirective() {
-    return findChildByClass(BbkPreUndefineDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPreUndefineDirective.class);
   }
 
 }

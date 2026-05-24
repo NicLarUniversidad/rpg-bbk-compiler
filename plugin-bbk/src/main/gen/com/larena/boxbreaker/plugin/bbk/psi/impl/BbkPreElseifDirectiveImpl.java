@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkPreElseifDirectiveImpl extends ASTWrapperPsiElement implements BbkPreElseifDirective {
+public class BbkPreElseifDirectiveImpl extends BbkPsiElementBase implements BbkPreElseifDirective {
 
-  public BbkPreElseifDirectiveImpl(@NotNull ASTNode node) {
+  public BbkPreElseifDirectiveImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,7 +30,7 @@ public class BbkPreElseifDirectiveImpl extends ASTWrapperPsiElement implements B
   @Override
   @Nullable
   public BbkExpression getExpression() {
-    return findChildByClass(BbkExpression.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExpression.class);
   }
 
 }

@@ -1,5 +1,6 @@
 package com.larena.boxbreaker.plugin.bbk.reference;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementResolveResult;
@@ -7,9 +8,12 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPolyVariantReferenceBase;
 import com.intellij.psi.ResolveResult;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
+import com.larena.boxbreaker.plugin.bbk.index.BbkIndexKeys;
+import com.larena.boxbreaker.plugin.bbk.psi.*;
 import com.larena.boxbreaker.plugin.bbk.scope.BbkScopeWalker;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,13 +22,13 @@ import java.util.List;
  * declared module/local entity.
  *
  * <p>Implemented as a poly-variant reference so a name shared by a {@code DCL-PR} and
- * its {@code DCL-PROC} can return both (decision #5 prefers the procedure definition
- * but the prototype stays reachable via find-usages).
+ * its {@code DCL-PROC} can return both.
  *
- * <p>All resolution goes through {@link ResolveCache} so opening a 500-line file does
- * not trigger N² re-resolution on every keystroke.
+ * <p>All resolution goes through {@link ResolveCache}.
  */
 public class BbkIdentReference extends PsiPolyVariantReferenceBase<PsiElement> {
+
+    private static final Logger LOG = Logger.getInstance(BbkIdentReference.class);
 
     public BbkIdentReference(@NotNull PsiElement element, @NotNull TextRange rangeInElement) {
         super(element, rangeInElement);
@@ -45,20 +49,60 @@ public class BbkIdentReference extends PsiPolyVariantReferenceBase<PsiElement> {
 
     private ResolveResult @NotNull [] resolveUncached() {
         String name = getValue();
+        LOG.warn("BBK-RESOLVE: looking up '" + name + "' from element " + getElement().getClass().getSimpleName());
         if (name.isEmpty()) return ResolveResult.EMPTY_ARRAY;
+
+        // 1) Local scope (Block B).
         List<PsiNamedElement> visible = BbkScopeWalker.allVisible(getElement());
-        // Collect every visible declaration matching by name (case-insensitive).
-        return visible.stream()
-            .filter(d -> name.equalsIgnoreCase(d.getName()))
-            .map(d -> (ResolveResult) new PsiElementResolveResult(d))
-            .toArray(ResolveResult[]::new);
+        LOG.warn("BBK-RESOLVE: local scope has " + visible.size() + " visible declarations");
+        for (PsiNamedElement d : visible) {
+            LOG.warn("BBK-RESOLVE:   - " + d.getClass().getSimpleName() + " name=" + d.getName());
+        }
+        List<ResolveResult> results = new ArrayList<>();
+        for (PsiNamedElement d : visible) {
+            if (name.equalsIgnoreCase(d.getName())) {
+                results.add(new PsiElementResolveResult(d));
+            }
+        }
+        if (!results.isEmpty()) {
+            LOG.warn("BBK-RESOLVE: matched " + results.size() + " local — returning");
+            return results.toArray(ResolveResult.EMPTY_ARRAY);
+        }
+        LOG.warn("BBK-RESOLVE: no local match, falling back to project index");
+
+        // 2) Cross-file fallback via stub indexes (Block C).
+        var project = getElement().getProject();
+        for (BbkProcedureDeclaration p : BbkProjectScopeLookup.findInProject(
+                project, name, BbkIndexKeys.PROCEDURE, BbkProcedureDeclaration.class)) {
+            results.add(new PsiElementResolveResult(p));
+        }
+        for (BbkPrototypeDeclaration p : BbkProjectScopeLookup.findInProject(
+                project, name, BbkIndexKeys.PROTOTYPE, BbkPrototypeDeclaration.class)) {
+            results.add(new PsiElementResolveResult(p));
+        }
+        for (BbkConstantDeclaration c : BbkProjectScopeLookup.findInProject(
+                project, name, BbkIndexKeys.CONSTANT, BbkConstantDeclaration.class)) {
+            results.add(new PsiElementResolveResult(c));
+        }
+        for (BbkVariableDeclaration v : BbkProjectScopeLookup.findInProject(
+                project, name, BbkIndexKeys.VARIABLE, BbkVariableDeclaration.class)) {
+            results.add(new PsiElementResolveResult(v));
+        }
+        for (BbkDataStructureDeclaration ds : BbkProjectScopeLookup.findInProject(
+                project, name, BbkIndexKeys.DATA_STRUCTURE, BbkDataStructureDeclaration.class)) {
+            results.add(new PsiElementResolveResult(ds));
+        }
+        for (BbkFileDeclaration f : BbkProjectScopeLookup.findInProject(
+                project, name, BbkIndexKeys.FILE_DECLARATION, BbkFileDeclaration.class)) {
+            results.add(new PsiElementResolveResult(f));
+        }
+        LOG.warn("BBK-RESOLVE: cross-file lookup returned " + results.size() + " results");
+        return results.toArray(ResolveResult.EMPTY_ARRAY);
     }
 
     @Override
     public Object @NotNull [] getVariants() {
-        // Each visible declaration becomes a candidate; the lookup-element layer in
-        // BbkScopeCompletionProvider will decorate them. Returning the PsiNamedElements
-        // directly lets IntelliJ use their getName() as the lookup string.
-        return BbkScopeWalker.allVisible(getElement()).toArray();
+        List<Object> out = new ArrayList<>(BbkScopeWalker.allVisible(getElement()));
+        return out.toArray();
     }
 }

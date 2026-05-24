@@ -36,13 +36,13 @@ public class BbkInlineParamImpl extends BbkNamedElementMixin implements BbkInlin
   @Override
   @NotNull
   public BbkTypeSpecification getTypeSpecification() {
-    return findNotNullChildByClass(BbkTypeSpecification.class);
+    return notNullChild(PsiTreeUtil.getChildOfType(this, BbkTypeSpecification.class));
   }
 
   @Override
   @NotNull
   public PsiElement getIdent() {
-    return findNotNullChildByType(IDENT);
+    return notNullChild(findChildByType(IDENT));
   }
 
 }

@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkConstantValueImpl extends ASTWrapperPsiElement implements BbkConstantValue {
+public class BbkConstantValueImpl extends BbkPsiElementBase implements BbkConstantValue {
 
-  public BbkConstantValueImpl(@NotNull ASTNode node) {
+  public BbkConstantValueImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,13 +30,13 @@ public class BbkConstantValueImpl extends ASTWrapperPsiElement implements BbkCon
   @Override
   @Nullable
   public BbkConstWrapper getConstWrapper() {
-    return findChildByClass(BbkConstWrapper.class);
+    return PsiTreeUtil.getChildOfType(this, BbkConstWrapper.class);
   }
 
   @Override
   @Nullable
   public BbkLiteral getLiteral() {
-    return findChildByClass(BbkLiteral.class);
+    return PsiTreeUtil.getChildOfType(this, BbkLiteral.class);
   }
 
 }

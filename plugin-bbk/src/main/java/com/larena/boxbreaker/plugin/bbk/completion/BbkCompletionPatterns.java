@@ -3,6 +3,7 @@ package com.larena.boxbreaker.plugin.bbk.completion;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +55,15 @@ public final class BbkCompletionPatterns {
         if (inside(position, BbkConstantDeclaration.class)) return false;
         if (inside(position, BbkPrototypeDeclaration.class)) return false;
         if (inside(position, BbkCtlOptStatement.class)) return false;
+        // Recovery: if the cursor is sitting in a "broken" declaration header (typed a
+        // partial modifier that doesn't lex as a keyword), it is NOT top-level either.
+        if (precededByOpenIntroducer(position, BbkTypes.KW_DCL_S,    false)) return false;
+        if (precededByOpenIntroducer(position, BbkTypes.KW_DCL_C,    false)) return false;
+        if (precededByOpenIntroducer(position, BbkTypes.KW_DCL_F,    false)) return false;
+        if (precededByOpenIntroducer(position, BbkTypes.KW_DCL_PR,   false)) return false;
+        if (precededByOpenIntroducer(position, BbkTypes.KW_DCL_DS,   true))  return false;
+        if (precededByOpenIntroducer(position, BbkTypes.KW_DCL_PROC, true))  return false;
+        if (precededByOpenIntroducer(position, BbkTypes.KW_CTL_OPT,  false)) return false;
         return true;
     }
 
@@ -74,15 +84,28 @@ public final class BbkCompletionPatterns {
 
     /** True if the caret is inside a {@code DCL-S} body and the type slot is the next thing expected. */
     public static boolean afterDclSIdent(@NotNull PsiElement position) {
-        return inside(position, BbkVariableDeclaration.class)
+        if (inside(position, BbkVariableDeclaration.class)
             && !inside(position, BbkInzModifier.class)
-            && !inside(position, BbkDimModifier.class);
+            && !inside(position, BbkDimModifier.class)) {
+            return true;
+        }
+        // Recovery path: partial keyword after `DCL-S name` left the cursor outside the broken decl.
+        return precededByOpenIntroducer(position, BbkTypes.KW_DCL_S, /*stopAtLbrace*/ false,
+                                        /*requireIdentBetween*/ true);
     }
 
     /** True if the caret is inside a {@code DCL-DS} header (before {@code {}). */
     public static boolean insideDsHeader(@NotNull PsiElement position) {
-        return inside(position, BbkDataStructureDeclaration.class)
-            && !inside(position, BbkDsBody.class);
+        // Happy path: cursor is structurally inside the DS.
+        if (inside(position, BbkDataStructureDeclaration.class)
+            && !inside(position, BbkDsBody.class)) {
+            return true;
+        }
+        // Recovery path: parser may have left the cursor outside the broken DS because
+        // the user typed a partial modifier that doesn't lex as a keyword yet. Require
+        // the name (one IDENT after DCL-DS) to avoid firing in "name position".
+        return precededByOpenIntroducer(position, BbkTypes.KW_DCL_DS, /*stopAtLbrace*/ true,
+                                        /*requireIdentBetween*/ true);
     }
 
     /** True if the caret is inside the {@code { ... }} of a DS. */
@@ -97,24 +120,30 @@ public final class BbkCompletionPatterns {
 
     /** True if the caret is inside a {@code DCL-F} declaration. */
     public static boolean insideFileDeclaration(@NotNull PsiElement position) {
-        return inside(position, BbkFileDeclaration.class);
+        if (inside(position, BbkFileDeclaration.class)) return true;
+        return precededByOpenIntroducer(position, BbkTypes.KW_DCL_F, /*stopAtLbrace*/ false,
+                                        /*requireIdentBetween*/ true);
     }
 
     /** True if the caret is inside a {@code DCL-PROC} header (before its body). */
     public static boolean insideProcHeader(@NotNull PsiElement position) {
         BbkProcedureDeclaration proc = ancestor(position, BbkProcedureDeclaration.class);
-        if (proc == null) return false;
-        return ancestor(position, BbkBlockStatement.class) == null;
+        if (proc != null && ancestor(position, BbkBlockStatement.class) == null) return true;
+        return precededByOpenIntroducer(position, BbkTypes.KW_DCL_PROC, /*stopAtLbrace*/ true,
+                                        /*requireIdentBetween*/ true);
     }
 
     /** True if the caret is inside a {@code DCL-PR} declaration. */
     public static boolean insidePrototype(@NotNull PsiElement position) {
-        return inside(position, BbkPrototypeDeclaration.class);
+        if (inside(position, BbkPrototypeDeclaration.class)) return true;
+        return precededByOpenIntroducer(position, BbkTypes.KW_DCL_PR, /*stopAtLbrace*/ false,
+                                        /*requireIdentBetween*/ true);
     }
 
     /** True if the caret is inside a {@code CTL-OPT} statement. */
     public static boolean insideCtlOpt(@NotNull PsiElement position) {
-        return inside(position, BbkCtlOptStatement.class);
+        if (inside(position, BbkCtlOptStatement.class)) return true;
+        return precededByOpenIntroducer(position, BbkTypes.KW_CTL_OPT, /*stopAtLbrace*/ false);
     }
 
     /** True if the caret is inside a {@code USAGE(...)} argument list. */
@@ -149,5 +178,48 @@ public final class BbkCompletionPatterns {
     /** True if the caret is inside a {@code begsr ... endsr} subroutine. */
     public static boolean insideSubroutine(@NotNull PsiElement position) {
         return inside(position, BbkSubroutineDefinition.class);
+    }
+
+    /**
+     * Recovery helper for the "broken PSI" case where the user has typed a partial
+     * keyword the parser cannot yet match (e.g. {@code DCL-DS pepe QUALI<dummy>}).
+     *
+     * <p>With {@code {pin=1}} on the declaration rule, the parser commits but leaves
+     * the trailing IDENT outside the structured element, so an ancestor-walk fails.
+     * This helper walks leaf-tokens backwards from the caret looking for the
+     * introducer keyword (e.g. {@code KW_DCL_DS}). Returns {@code true} unless a
+     * terminator is found first: {@code ;} always closes a declaration; if
+     * {@code stopAtLbrace} is true, an {@code {} also closes (declarations whose body
+     * is a block, like DCL-DS or DCL-PROC).
+     *
+     * <p>The {@code requireIdentBetween} flag exists so modifier providers do not
+     * fire before the declaration's name has been typed. With it set, the walk must
+     * cross at least one IDENT (the name) before reaching the introducer; otherwise
+     * we return {@code false} to indicate "still in name position".
+     */
+    private static boolean precededByOpenIntroducer(@NotNull PsiElement position,
+                                                    @NotNull IElementType introducer,
+                                                    boolean stopAtLbrace) {
+        return precededByOpenIntroducer(position, introducer, stopAtLbrace,
+                                        /*requireIdentBetween*/ false);
+    }
+
+    private static boolean precededByOpenIntroducer(@NotNull PsiElement position,
+                                                    @NotNull IElementType introducer,
+                                                    boolean stopAtLbrace,
+                                                    boolean requireIdentBetween) {
+        PsiElement el = PsiTreeUtil.prevLeaf(position, /*skipEmpty*/ true);
+        boolean sawIdent = false;
+        while (el != null) {
+            IElementType t = el.getNode().getElementType();
+            if (t == BbkTypes.SEMI) return false;
+            if (stopAtLbrace && t == BbkTypes.LBRACE) return false;
+            if (t == introducer) {
+                return !requireIdentBetween || sawIdent;
+            }
+            if (t == BbkTypes.IDENT) sawIdent = true;
+            el = PsiTreeUtil.prevLeaf(el, /*skipEmpty*/ true);
+        }
+        return false;
     }
 }

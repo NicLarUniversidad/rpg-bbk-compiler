@@ -1,6 +1,10 @@
-CTL-OPT MAIN(procePrueba;)
+CTL-OPT MAIN(pepe);
 
 CTL-OPT MAIN(processOrders);
+
+dcl-ds pepe qualified {
+    id CHAR(50);
+}
 
 DCL-DS customer QUALIFIED {
   id     INT(10);
@@ -10,6 +14,8 @@ DCL-DS customer QUALIFIED {
 
 DCL-S currentCustomer LIKEDS(customer);
 DCL-C MAX_RETRIES 5;
+
+dcl-proc
 
 DCL-PROC processOrders {
   DCL-S i INT(10);

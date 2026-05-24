@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkIfStatementImpl extends ASTWrapperPsiElement implements BbkIfStatement {
+public class BbkIfStatementImpl extends BbkPsiElementBase implements BbkIfStatement {
 
-  public BbkIfStatementImpl(@NotNull ASTNode node) {
+  public BbkIfStatementImpl(ASTNode node) {
     super(node);
   }
 
@@ -36,13 +36,13 @@ public class BbkIfStatementImpl extends ASTWrapperPsiElement implements BbkIfSta
   @Override
   @Nullable
   public BbkExpression getExpression() {
-    return findChildByClass(BbkExpression.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExpression.class);
   }
 
   @Override
   @Nullable
   public BbkIfStatement getIfStatement() {
-    return findChildByClass(BbkIfStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkIfStatement.class);
   }
 
 }

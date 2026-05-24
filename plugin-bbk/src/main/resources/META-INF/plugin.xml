@@ -31,6 +31,11 @@
             language="BBK"
             implementationClass="com.larena.boxbreaker.plugin.bbk.completion.BbkCompletionContributor"/>
 
+        <!-- Brace pairs for auto-insertion + matching highlight + enter-between-braces. -->
+        <lang.braceMatcher
+            language="BBK"
+            implementationClass="com.larena.boxbreaker.plugin.bbk.editor.BbkBraceMatcher"/>
+
         <!-- Smart typing polish: ; jumps past ), and closers skip-over their existing match. -->
         <typedHandler
             implementation="com.larena.boxbreaker.plugin.bbk.editor.BbkSmartTypingHandler"/>
@@ -39,6 +44,19 @@
         <psi.referenceContributor
             language="BBK"
             implementation="com.larena.boxbreaker.plugin.bbk.reference.BbkReferenceContributor"/>
+
+        <!-- Block C: stub element type holder + per-kind project-wide indexes. -->
+        <stubElementTypeHolder
+            class="com.larena.boxbreaker.plugin.bbk.stub.BbkStubElementTypes"
+            externalIdPrefix="bbk."/>
+
+        <stubIndex implementation="com.larena.boxbreaker.plugin.bbk.index.BbkVariableIndex"/>
+        <stubIndex implementation="com.larena.boxbreaker.plugin.bbk.index.BbkConstantIndex"/>
+        <stubIndex implementation="com.larena.boxbreaker.plugin.bbk.index.BbkDataStructureIndex"/>
+        <stubIndex implementation="com.larena.boxbreaker.plugin.bbk.index.BbkDsSubfieldIndex"/>
+        <stubIndex implementation="com.larena.boxbreaker.plugin.bbk.index.BbkPrototypeIndex"/>
+        <stubIndex implementation="com.larena.boxbreaker.plugin.bbk.index.BbkProcedureIndex"/>
+        <stubIndex implementation="com.larena.boxbreaker.plugin.bbk.index.BbkFileDeclarationIndex"/>
 
         <!-- Block A: live templates. -->
         <defaultLiveTemplates file="/liveTemplates/Bbk.xml"/>

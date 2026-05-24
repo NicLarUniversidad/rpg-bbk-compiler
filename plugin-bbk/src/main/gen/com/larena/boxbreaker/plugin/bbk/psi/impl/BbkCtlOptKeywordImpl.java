@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkCtlOptKeywordImpl extends ASTWrapperPsiElement implements BbkCtlOptKeyword {
+public class BbkCtlOptKeywordImpl extends BbkPsiElementBase implements BbkCtlOptKeyword {
 
-  public BbkCtlOptKeywordImpl(@NotNull ASTNode node) {
+  public BbkCtlOptKeywordImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,13 +30,13 @@ public class BbkCtlOptKeywordImpl extends ASTWrapperPsiElement implements BbkCtl
   @Override
   @Nullable
   public BbkCtlOptArgs getCtlOptArgs() {
-    return findChildByClass(BbkCtlOptArgs.class);
+    return PsiTreeUtil.getChildOfType(this, BbkCtlOptArgs.class);
   }
 
   @Override
   @NotNull
   public PsiElement getIdent() {
-    return findNotNullChildByType(IDENT);
+    return notNullChild(findChildByType(IDENT));
   }
 
 }

@@ -1,0 +1,27 @@
+// Module-level data structures shared across the project.
+// Used to verify that DCL-DS declarations + their subfields are reachable cross-file.
+
+DCL-DS customer QUALIFIED {
+  id        INT(10);
+  firstName CHAR(50);
+  lastName  CHAR(50);
+  email     VARCHAR(100);
+  birthDate DATE;
+  isActive  BOOL;
+}
+
+DCL-DS order QUALIFIED {
+  orderId      INT(10);
+  customerId   INT(10);
+  total        PACKED(11:2);
+  orderDate    DATE;
+  status       CHAR(20);
+}
+
+// A template DS (no storage; meant to be used with LIKEDS).
+DCL-DS addressTemplate TEMPLATE QUALIFIED {
+  street  CHAR(100);
+  city    CHAR(50);
+  zip     CHAR(10);
+  country CHAR(50);
+}

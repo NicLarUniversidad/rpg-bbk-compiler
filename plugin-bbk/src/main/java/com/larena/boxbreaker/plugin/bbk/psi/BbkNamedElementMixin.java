@@ -4,6 +4,8 @@ import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNameIdentifierOwner;
+import com.intellij.psi.PsiReference;
+import com.intellij.psi.impl.source.resolve.reference.ReferenceProvidersRegistry;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,10 +42,16 @@ public abstract class BbkNamedElementMixin extends ASTWrapperPsiElement implemen
 
     @Override
     public PsiElement setName(@NotNull String name) throws IncorrectOperationException {
-        // Block C will replace this with a proper identifier-replacement strategy that
-        // creates a new IDENT token via a PsiElementFactory. For Block B we keep rename
-        // logically supported (so PsiNameIdentifierOwner is honoured) but a no-op on the
-        // tree so users see a clear "not supported" rather than silent corruption.
         return this;
+    }
+
+    /**
+     * Delegate to the reference registry so {@link com.larena.boxbreaker.plugin.bbk.reference.BbkReferenceContributor}
+     * can attach references to these elements. See {@link BbkPsiElementBase} for the
+     * rationale.
+     */
+    @Override
+    public PsiReference @NotNull [] getReferences() {
+        return ReferenceProvidersRegistry.getReferencesFromProviders(this);
     }
 }

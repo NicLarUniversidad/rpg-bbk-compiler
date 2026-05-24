@@ -1,0 +1,37 @@
+// Module-level procedures and prototypes shared across the project.
+// Used to verify cross-file Ctrl+B on procedure calls, LIKEDS resolution,
+// and Goto Symbol (Ctrl+Alt+Shift+N).
+
+// Prototypes (forward declarations) — typically used when the implementation
+// lives in another module or is bound at link time.
+DCL-PR sendNotification(custId INT(10) VALUE, msg VARCHAR(500) CONST);
+DCL-PR computeTax(amount PACKED(11:2) VALUE) -> PACKED(11:2);
+DCL-PR formatCurrency(amount PACKED(11:2) VALUE) -> VARCHAR(50);
+
+// Concrete procedures.
+
+DCL-PROC validateCustomer(cust LIKEDS(customer) CONST) -> BOOL EXPORT {
+  if (cust.id <= 0) {
+    return false;
+  }
+  if (len(trim(cust.email)) == 0) {
+    return false;
+  }
+  return cust.isActive;
+}
+
+DCL-PROC processOrder(ord LIKEDS(order) CONST) -> BOOL EXPORT {
+  DCL-S taxAmount PACKED(11:2);
+
+  if (ord.total <= 0) {
+    return false;
+  }
+  taxAmount = computeTax(ord.total);
+  sendNotification(ord.customerId, "Order " + char(ord.orderId) + " processed");
+  return true;
+}
+
+DCL-PROC greetCustomer(cust LIKEDS(customer) CONST) {
+  print("Hello, " + trim(cust.firstName) + " " + trim(cust.lastName));
+  print("From " + COMPANY_NAME);
+}

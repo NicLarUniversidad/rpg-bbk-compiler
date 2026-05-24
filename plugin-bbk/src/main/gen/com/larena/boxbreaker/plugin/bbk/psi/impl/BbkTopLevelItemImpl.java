@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkTopLevelItemImpl extends ASTWrapperPsiElement implements BbkTopLevelItem {
+public class BbkTopLevelItemImpl extends BbkPsiElementBase implements BbkTopLevelItem {
 
-  public BbkTopLevelItemImpl(@NotNull ASTNode node) {
+  public BbkTopLevelItemImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,49 +30,49 @@ public class BbkTopLevelItemImpl extends ASTWrapperPsiElement implements BbkTopL
   @Override
   @Nullable
   public BbkConstantDeclaration getConstantDeclaration() {
-    return findChildByClass(BbkConstantDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkConstantDeclaration.class);
   }
 
   @Override
   @Nullable
   public BbkCtlOptStatement getCtlOptStatement() {
-    return findChildByClass(BbkCtlOptStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkCtlOptStatement.class);
   }
 
   @Override
   @Nullable
   public BbkDataStructureDeclaration getDataStructureDeclaration() {
-    return findChildByClass(BbkDataStructureDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkDataStructureDeclaration.class);
   }
 
   @Override
   @Nullable
   public BbkDirective getDirective() {
-    return findChildByClass(BbkDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkDirective.class);
   }
 
   @Override
   @Nullable
   public BbkFileDeclaration getFileDeclaration() {
-    return findChildByClass(BbkFileDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkFileDeclaration.class);
   }
 
   @Override
   @Nullable
   public BbkProcedureDeclaration getProcedureDeclaration() {
-    return findChildByClass(BbkProcedureDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkProcedureDeclaration.class);
   }
 
   @Override
   @Nullable
   public BbkPrototypeDeclaration getPrototypeDeclaration() {
-    return findChildByClass(BbkPrototypeDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPrototypeDeclaration.class);
   }
 
   @Override
   @Nullable
   public BbkVariableDeclaration getVariableDeclaration() {
-    return findChildByClass(BbkVariableDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkVariableDeclaration.class);
   }
 
 }

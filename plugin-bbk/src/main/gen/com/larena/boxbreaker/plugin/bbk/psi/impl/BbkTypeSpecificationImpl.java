@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkTypeSpecificationImpl extends ASTWrapperPsiElement implements BbkTypeSpecification {
+public class BbkTypeSpecificationImpl extends BbkPsiElementBase implements BbkTypeSpecification {
 
-  public BbkTypeSpecificationImpl(@NotNull ASTNode node) {
+  public BbkTypeSpecificationImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,13 +30,13 @@ public class BbkTypeSpecificationImpl extends ASTWrapperPsiElement implements Bb
   @Override
   @Nullable
   public BbkLikeReference getLikeReference() {
-    return findChildByClass(BbkLikeReference.class);
+    return PsiTreeUtil.getChildOfType(this, BbkLikeReference.class);
   }
 
   @Override
   @Nullable
   public BbkPrimitiveTypeSpec getPrimitiveTypeSpec() {
-    return findChildByClass(BbkPrimitiveTypeSpec.class);
+    return PsiTreeUtil.getChildOfType(this, BbkPrimitiveTypeSpec.class);
   }
 
 }

@@ -7,12 +7,20 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.util.ProcessingContext;
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.stubs.StubIndex;
+import com.intellij.psi.stubs.StubIndexKey;
 import com.larena.boxbreaker.plugin.bbk.BbkBundle;
 import com.larena.boxbreaker.plugin.bbk.completion.matcher.BbkHyphenAwarePrefixMatcher;
 import com.larena.boxbreaker.plugin.bbk.icons.BbkIcons;
+import com.larena.boxbreaker.plugin.bbk.index.BbkIndexKeys;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 import com.larena.boxbreaker.plugin.bbk.scope.BbkScopeWalker;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Emits every visible user-declared identifier as a completion suggestion:
@@ -32,13 +40,46 @@ public class BbkScopeCompletionProvider extends CompletionProvider<CompletionPar
                                   @NotNull ProcessingContext context,
                                   @NotNull CompletionResultSet result) {
         PsiElement position = parameters.getPosition();
-        String prefix = result.getPrefixMatcher().getPrefix();
+        String prefix = BbkKeywordProviderBase.computeBbkPrefix(parameters);
         CompletionResultSet wrapped = result.withPrefixMatcher(new BbkHyphenAwarePrefixMatcher(prefix));
 
+        Set<String> emittedKeys = new HashSet<>();
+
+        // 1) Local scope (Block B).
         for (PsiNamedElement decl : BbkScopeWalker.allVisible(position)) {
             String name = decl.getName();
             if (name == null || name.isEmpty()) continue;
-            wrapped.addElement(buildLookup(decl, name));
+            String key = decl.getClass().getName() + "::" + name.toLowerCase();
+            if (emittedKeys.add(key)) wrapped.addElement(buildLookup(decl, name));
+        }
+
+        // 2) Cross-file: walk each index and emit anything not already in local scope.
+        Project project = position.getProject();
+        emitFromIndex(project, BbkIndexKeys.PROCEDURE,      BbkProcedureDeclaration.class,     emittedKeys, wrapped);
+        emitFromIndex(project, BbkIndexKeys.PROTOTYPE,      BbkPrototypeDeclaration.class,     emittedKeys, wrapped);
+        emitFromIndex(project, BbkIndexKeys.CONSTANT,       BbkConstantDeclaration.class,      emittedKeys, wrapped);
+        emitFromIndex(project, BbkIndexKeys.VARIABLE,       BbkVariableDeclaration.class,      emittedKeys, wrapped);
+        emitFromIndex(project, BbkIndexKeys.DATA_STRUCTURE, BbkDataStructureDeclaration.class, emittedKeys, wrapped);
+        emitFromIndex(project, BbkIndexKeys.FILE_DECLARATION, BbkFileDeclaration.class,        emittedKeys, wrapped);
+    }
+
+    private <T extends PsiNamedElement> void emitFromIndex(
+            @NotNull Project project,
+            @NotNull StubIndexKey<String, T> key,
+            @NotNull Class<T> clazz,
+            @NotNull Set<String> emittedKeys,
+            @NotNull CompletionResultSet wrapped) {
+        for (String name : StubIndex.getInstance().getAllKeys(key, project)) {
+            for (T decl : StubIndex.getElements(key, name, project,
+                    GlobalSearchScope.allScope(project), clazz)) {
+                String emittedKey = clazz.getName() + "::" + name.toLowerCase();
+                if (emittedKeys.add(emittedKey)) {
+                    String declName = decl.getName();
+                    if (declName != null && !declName.isEmpty()) {
+                        wrapped.addElement(buildLookup(decl, declName));
+                    }
+                }
+            }
         }
     }
 

@@ -38,6 +38,11 @@ public class BbkMemberReference extends PsiReferenceBase<PsiElement> {
         this.lhs = lhs;
     }
 
+    public BbkMemberReference(@NotNull PsiElement element, @NotNull TextRange rangeInElement, @NotNull PsiElement lhs) {
+        super(element, rangeInElement);
+        this.lhs = lhs;
+    }
+
     private static final ResolveCache.Resolver RESOLVER =
         (ref, incomplete) -> ((BbkMemberReference) ref).resolveUncached();
 

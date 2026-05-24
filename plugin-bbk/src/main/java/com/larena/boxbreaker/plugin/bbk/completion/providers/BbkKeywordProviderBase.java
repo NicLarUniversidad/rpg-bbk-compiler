@@ -4,6 +4,7 @@ import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.editor.Document;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ProcessingContext;
 import com.larena.boxbreaker.plugin.bbk.completion.Suggestion;
@@ -37,7 +38,7 @@ public abstract class BbkKeywordProviderBase extends CompletionProvider<Completi
         PsiElement position = parameters.getPosition();
         if (!applies(position)) return;
 
-        String prefix = result.getPrefixMatcher().getPrefix();
+        String prefix = computeBbkPrefix(parameters);
         CompletionResultSet wrapped = result.withPrefixMatcher(new BbkHyphenAwarePrefixMatcher(prefix));
 
         for (Suggestion s : suggestions(position)) {
@@ -53,5 +54,27 @@ public abstract class BbkKeywordProviderBase extends CompletionProvider<Completi
             }
             wrapped.addElement(b);
         }
+    }
+
+    /**
+     * Computes the prefix BBK cares about, extending IntelliJ's default identifier
+     * prefix (which stops at non-alphanumeric chars) to also include {@code -} and
+     * {@code *}. Without this, typing {@code dcl-pr} + {@code Ctrl+Space} would see
+     * a prefix of just {@code pr} and miss the {@code DCL-PR} candidate.
+     */
+    public static @NotNull String computeBbkPrefix(@NotNull CompletionParameters parameters) {
+        Document doc = parameters.getEditor().getDocument();
+        int caret = parameters.getOffset();
+        CharSequence text = doc.getCharsSequence();
+        int start = caret;
+        while (start > 0) {
+            char c = text.charAt(start - 1);
+            if (Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '*') {
+                start--;
+            } else {
+                break;
+            }
+        }
+        return text.subSequence(start, caret).toString();
     }
 }

@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkReadpeOpImpl extends ASTWrapperPsiElement implements BbkReadpeOp {
+public class BbkReadpeOpImpl extends BbkPsiElementBase implements BbkReadpeOp {
 
-  public BbkReadpeOpImpl(@NotNull ASTNode node) {
+  public BbkReadpeOpImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,7 +30,7 @@ public class BbkReadpeOpImpl extends ASTWrapperPsiElement implements BbkReadpeOp
   @Override
   @Nullable
   public BbkExpression getExpression() {
-    return findChildByClass(BbkExpression.class);
+    return PsiTreeUtil.getChildOfType(this, BbkExpression.class);
   }
 
 }

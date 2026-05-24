@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkBlockItemImpl extends ASTWrapperPsiElement implements BbkBlockItem {
+public class BbkBlockItemImpl extends BbkPsiElementBase implements BbkBlockItem {
 
-  public BbkBlockItemImpl(@NotNull ASTNode node) {
+  public BbkBlockItemImpl(ASTNode node) {
     super(node);
   }
 
@@ -30,37 +30,37 @@ public class BbkBlockItemImpl extends ASTWrapperPsiElement implements BbkBlockIt
   @Override
   @Nullable
   public BbkConstantDeclaration getConstantDeclaration() {
-    return findChildByClass(BbkConstantDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkConstantDeclaration.class);
   }
 
   @Override
   @Nullable
   public BbkDataStructureDeclaration getDataStructureDeclaration() {
-    return findChildByClass(BbkDataStructureDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkDataStructureDeclaration.class);
   }
 
   @Override
   @Nullable
   public BbkDirective getDirective() {
-    return findChildByClass(BbkDirective.class);
+    return PsiTreeUtil.getChildOfType(this, BbkDirective.class);
   }
 
   @Override
   @Nullable
   public BbkStatement getStatement() {
-    return findChildByClass(BbkStatement.class);
+    return PsiTreeUtil.getChildOfType(this, BbkStatement.class);
   }
 
   @Override
   @Nullable
   public BbkSubroutineDefinition getSubroutineDefinition() {
-    return findChildByClass(BbkSubroutineDefinition.class);
+    return PsiTreeUtil.getChildOfType(this, BbkSubroutineDefinition.class);
   }
 
   @Override
   @Nullable
   public BbkVariableDeclaration getVariableDeclaration() {
-    return findChildByClass(BbkVariableDeclaration.class);
+    return PsiTreeUtil.getChildOfType(this, BbkVariableDeclaration.class);
   }
 
 }

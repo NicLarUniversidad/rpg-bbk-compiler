@@ -5,6 +5,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiReferenceBase;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
+import com.larena.boxbreaker.plugin.bbk.index.BbkIndexKeys;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkDataStructureDeclaration;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkVariableDeclaration;
 import com.larena.boxbreaker.plugin.bbk.scope.BbkScopeWalker;
@@ -44,10 +45,20 @@ public class BbkTypeReference extends PsiReferenceBase<PsiElement> {
     private @Nullable PsiElement resolveUncached() {
         String name = getValue();
         if (name.isEmpty()) return null;
-        // Prefer a DS match; fall back to a DCL-S match for LIKE.
+
+        // 1) Local scope.
         PsiElement ds = BbkScopeWalker.resolveOfType(getElement(), name, BbkDataStructureDeclaration.class);
         if (ds != null) return ds;
-        return BbkScopeWalker.resolveOfType(getElement(), name, BbkVariableDeclaration.class);
+        PsiElement var = BbkScopeWalker.resolveOfType(getElement(), name, BbkVariableDeclaration.class);
+        if (var != null) return var;
+
+        // 2) Cross-file fallback via stub indexes.
+        var project = getElement().getProject();
+        BbkDataStructureDeclaration dsProj = BbkProjectScopeLookup.findFirst(
+            project, name, BbkIndexKeys.DATA_STRUCTURE, BbkDataStructureDeclaration.class);
+        if (dsProj != null) return dsProj;
+        return BbkProjectScopeLookup.findFirst(
+            project, name, BbkIndexKeys.VARIABLE, BbkVariableDeclaration.class);
     }
 
     @Override

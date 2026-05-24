@@ -14,11 +14,16 @@ import com.intellij.psi.tree.TokenSet;
 import com.larena.boxbreaker.plugin.bbk.parser.BbkParser;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkFile;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkTypes;
+import com.larena.boxbreaker.plugin.bbk.stub.BbkFileStubElementType;
 import org.jetbrains.annotations.NotNull;
 
 public class BbkParserDefinition implements ParserDefinition {
 
-    public static final IFileElementType FILE = new IFileElementType(BbkLanguage.INSTANCE);
+    /**
+     * Block C: the file element type is now a stub file element type, so BBK opts
+     * into IntelliJ's persistent stub index.
+     */
+    public static final IFileElementType FILE = new BbkFileStubElementType();
 
     private static final TokenSet WHITE_SPACES = TokenSet.create(TokenType.WHITE_SPACE);
     private static final TokenSet COMMENTS = TokenSet.create(BbkTypes.LINE_COMMENT, BbkTypes.BLOCK_COMMENT);

@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkSubscriptListImpl extends ASTWrapperPsiElement implements BbkSubscriptList {
+public class BbkSubscriptListImpl extends BbkPsiElementBase implements BbkSubscriptList {
 
-  public BbkSubscriptListImpl(@NotNull ASTNode node) {
+  public BbkSubscriptListImpl(ASTNode node) {
     super(node);
   }
 

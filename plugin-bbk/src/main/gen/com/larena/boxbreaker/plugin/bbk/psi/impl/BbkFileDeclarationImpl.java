@@ -8,13 +8,19 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.larena.boxbreaker.plugin.bbk.psi.BbkNamedElementMixin;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkStubBasedNamedElementMixin;
+import com.larena.boxbreaker.plugin.bbk.stub.BbkFileDeclarationStub;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
+import com.intellij.psi.stubs.IStubElementType;
 
-public class BbkFileDeclarationImpl extends BbkNamedElementMixin implements BbkFileDeclaration {
+public class BbkFileDeclarationImpl extends BbkStubBasedNamedElementMixin<BbkFileDeclarationStub> implements BbkFileDeclaration {
 
   public BbkFileDeclarationImpl(ASTNode node) {
     super(node);
+  }
+
+  public BbkFileDeclarationImpl(BbkFileDeclarationStub stub, IStubElementType stubType) {
+    super(stub, stubType);
   }
 
   public void accept(@NotNull BbkVisitor visitor) {

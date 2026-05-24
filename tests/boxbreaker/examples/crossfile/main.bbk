@@ -1,0 +1,70 @@
+// Entry point that consumes every other file in this directory.
+// Open this file in the sandbox to exercise Block C (cross-file resolution):
+//
+//   * Ctrl+B over `customer`        → jumps to common-types.bbk
+//   * Ctrl+B over `processOrder(..)` → jumps to common-procs.bbk
+//   * Ctrl+B over `MAX_RETRIES`     → jumps to common-constants.bbk
+//   * Ctrl+B over `validateCustomer`→ jumps to common-procs.bbk
+//   * Ctrl+B over `addressTemplate` inside LIKEDS(...) → jumps to common-types.bbk
+//   * `currentCustomer.` should list customer's subfields (cross-file member access)
+//   * Alt+F7 over `customer` shows usages in main.bbk + common-procs.bbk
+//   * Ctrl+Alt+Shift+N "processOrder" should find the procedure across files
+//   * Autocomplete in this proc should suggest cross-file identifiers
+
+CTL-OPT MAIN(runDemo);
+
+// Local prototype that mirrors a cross-file procedure (intentional to demo
+// poly-variant resolution: the index returns both this PR and the PROC in
+// common-procs.bbk for `processOrder`).
+DCL-PR localHelper(n INT(10) VALUE) -> INT(10);
+
+DCL-PROC runDemo EXPORT {
+  // Use types declared in common-types.bbk
+  DCL-S currentCustomer LIKEDS(customer);
+  DCL-S currentOrder    LIKEDS(order);
+  DCL-S shippingAddr    LIKEDS(addressTemplate);
+
+  // Use constants declared in common-constants.bbk
+  DCL-S retriesLeft     INT(10) INZ(MAX_RETRIES);
+  DCL-S tag             VARCHAR(100) INZ(COMPANY_NAME);
+
+  DCL-S i      INT(10);
+  DCL-S valid  BOOL;
+
+  // Populate the customer DS — Ctrl+B on each field should land in common-types.bbk
+  currentCustomer.id        = 100;
+  currentCustomer.firstName = "Alice";
+  currentCustomer.lastName  = "Smith";
+  currentCustomer.email     = "alice@example.com";
+  currentCustomer.isActive  = true;
+
+  // Populate the order DS
+  currentOrder.orderId    = 1;
+  currentOrder.customerId = currentCustomer.id;
+  currentOrder.total      = 199.95d;
+  currentOrder.status     = "PENDING";
+
+  // Cross-file procedure calls — Ctrl+B should jump to common-procs.bbk
+  valid = validateCustomer(currentCustomer);
+  if (valid) {
+    greetCustomer(currentCustomer);
+    if (processOrder(currentOrder)) {
+      print("Order " + char(currentOrder.orderId) + " ok");
+    }
+  }
+
+  // Loop using a cross-file constant
+  for (i = 1; i <= MAX_RETRIES; i += 1) {
+    if (i == DEFAULT_PORT) {
+      break;
+    }
+  }
+
+  // Local procedure call
+  retriesLeft = localHelper(retriesLeft);
+}
+
+// Concrete implementation of the local prototype above.
+DCL-PROC localHelper(n INT(10) VALUE) -> INT(10) {
+  return n - 1;
+}

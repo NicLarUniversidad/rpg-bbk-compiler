@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkPrefixFKeywordImpl extends ASTWrapperPsiElement implements BbkPrefixFKeyword {
+public class BbkPrefixFKeywordImpl extends BbkPsiElementBase implements BbkPrefixFKeyword {
 
-  public BbkPrefixFKeywordImpl(@NotNull ASTNode node) {
+  public BbkPrefixFKeywordImpl(ASTNode node) {
     super(node);
   }
 

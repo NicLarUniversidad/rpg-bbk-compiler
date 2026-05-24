@@ -8,12 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static com.larena.boxbreaker.plugin.bbk.psi.BbkTypes.*;
-import com.intellij.extapi.psi.ASTWrapperPsiElement;
+import com.larena.boxbreaker.plugin.bbk.psi.BbkPsiElementBase;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
 
-public class BbkPostfixExpressionImpl extends ASTWrapperPsiElement implements BbkPostfixExpression {
+public class BbkPostfixExpressionImpl extends BbkPsiElementBase implements BbkPostfixExpression {
 
-  public BbkPostfixExpressionImpl(@NotNull ASTNode node) {
+  public BbkPostfixExpressionImpl(ASTNode node) {
     super(node);
   }
 
@@ -36,7 +36,7 @@ public class BbkPostfixExpressionImpl extends ASTWrapperPsiElement implements Bb
   @Override
   @NotNull
   public BbkPrimary getPrimary() {
-    return findNotNullChildByClass(BbkPrimary.class);
+    return notNullChild(PsiTreeUtil.getChildOfType(this, BbkPrimary.class));
   }
 
 }
