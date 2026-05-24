@@ -5,9 +5,11 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiReferenceBase;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
+import com.intellij.util.IncorrectOperationException;
 import com.larena.boxbreaker.plugin.bbk.index.BbkIndexKeys;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkDataStructureDeclaration;
 import com.larena.boxbreaker.plugin.bbk.psi.BbkVariableDeclaration;
+import com.larena.boxbreaker.plugin.bbk.psi.factory.BbkElementFactory;
 import com.larena.boxbreaker.plugin.bbk.scope.BbkScopeWalker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -66,5 +68,14 @@ public class BbkTypeReference extends PsiReferenceBase<PsiElement> {
         return BbkScopeWalker.allVisible(getElement()).stream()
             .filter(d -> d instanceof BbkDataStructureDeclaration || d instanceof BbkVariableDeclaration)
             .toArray();
+    }
+
+    @Override
+    public PsiElement handleElementRename(@NotNull String newName) throws IncorrectOperationException {
+        PsiElement oldId = BbkElementFactory.findIdentInRange(getElement(), getRangeInElement());
+        if (oldId == null) return getElement();
+        PsiElement newId = BbkElementFactory.createIdentifier(getElement().getProject(), newName);
+        oldId.replace(newId);
+        return getElement();
     }
 }

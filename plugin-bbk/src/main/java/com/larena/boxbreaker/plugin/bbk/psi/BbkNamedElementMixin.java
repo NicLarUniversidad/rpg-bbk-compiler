@@ -7,6 +7,7 @@ import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.impl.source.resolve.reference.ReferenceProvidersRegistry;
 import com.intellij.util.IncorrectOperationException;
+import com.larena.boxbreaker.plugin.bbk.psi.factory.BbkElementFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,8 +41,28 @@ public abstract class BbkNamedElementMixin extends ASTWrapperPsiElement implemen
         return node != null ? node.getPsi() : null;
     }
 
+    /**
+     * Required for IntelliJ's {@code TargetElementUtilBase.getNamedElement} fallback,
+     * which gates rename / Go-to-Declaration on
+     * {@code parent.getTextOffset() == leaf.getTextRange().getStartOffset()}.
+     *
+     * <p>The default {@code getTextOffset()} returns the start of the whole composite
+     * (e.g., position of {@code DCL-S}). The leaf at the caret is the IDENT inside —
+     * those offsets never match, so Rename From Declaration silently fails. Reporting
+     * the IDENT's offset here fixes it.
+     */
+    @Override
+    public int getTextOffset() {
+        PsiElement id = getNameIdentifier();
+        return id != null ? id.getTextOffset() : super.getTextOffset();
+    }
+
     @Override
     public PsiElement setName(@NotNull String name) throws IncorrectOperationException {
+        PsiElement oldId = getNameIdentifier();
+        if (oldId == null) return this;
+        PsiElement newId = BbkElementFactory.createIdentifier(getProject(), name);
+        oldId.replace(newId);
         return this;
     }
 

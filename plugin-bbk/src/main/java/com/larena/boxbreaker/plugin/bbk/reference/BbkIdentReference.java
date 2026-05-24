@@ -8,8 +8,10 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPolyVariantReferenceBase;
 import com.intellij.psi.ResolveResult;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
+import com.intellij.util.IncorrectOperationException;
 import com.larena.boxbreaker.plugin.bbk.index.BbkIndexKeys;
 import com.larena.boxbreaker.plugin.bbk.psi.*;
+import com.larena.boxbreaker.plugin.bbk.psi.factory.BbkElementFactory;
 import com.larena.boxbreaker.plugin.bbk.scope.BbkScopeWalker;
 import org.jetbrains.annotations.NotNull;
 
@@ -104,5 +106,14 @@ public class BbkIdentReference extends PsiPolyVariantReferenceBase<PsiElement> {
     public Object @NotNull [] getVariants() {
         List<Object> out = new ArrayList<>(BbkScopeWalker.allVisible(getElement()));
         return out.toArray();
+    }
+
+    @Override
+    public PsiElement handleElementRename(@NotNull String newName) throws IncorrectOperationException {
+        PsiElement oldId = BbkElementFactory.findIdentInRange(getElement(), getRangeInElement());
+        if (oldId == null) return getElement();
+        PsiElement newId = BbkElementFactory.createIdentifier(getElement().getProject(), newName);
+        oldId.replace(newId);
+        return getElement();
     }
 }

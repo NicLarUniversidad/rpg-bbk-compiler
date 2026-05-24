@@ -10,6 +10,7 @@ import com.intellij.psi.stubs.IStubElementType;
 import com.intellij.psi.stubs.NamedStub;
 import com.intellij.psi.stubs.StubElement;
 import com.intellij.util.IncorrectOperationException;
+import com.larena.boxbreaker.plugin.bbk.psi.factory.BbkElementFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,8 +58,24 @@ public abstract class BbkStubBasedNamedElementMixin<S extends StubElement<?>>
         return node != null ? node.getPsi() : null;
     }
 
+    /**
+     * Required for IntelliJ's {@code TargetElementUtilBase.getNamedElement} fallback,
+     * which gates rename / Go-to-Declaration on
+     * {@code parent.getTextOffset() == leaf.getTextRange().getStartOffset()}. See
+     * {@link BbkNamedElementMixin#getTextOffset()} for the full rationale.
+     */
+    @Override
+    public int getTextOffset() {
+        PsiElement id = getNameIdentifier();
+        return id != null ? id.getTextOffset() : super.getTextOffset();
+    }
+
     @Override
     public PsiElement setName(@NotNull String name) throws IncorrectOperationException {
+        PsiElement oldId = getNameIdentifier();
+        if (oldId == null) return this;
+        PsiElement newId = BbkElementFactory.createIdentifier(getProject(), name);
+        oldId.replace(newId);
         return this;
     }
 

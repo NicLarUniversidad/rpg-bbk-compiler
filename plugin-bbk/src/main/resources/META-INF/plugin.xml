@@ -45,6 +45,10 @@
             language="BBK"
             implementation="com.larena.boxbreaker.plugin.bbk.reference.BbkReferenceContributor"/>
 
+        <!-- Rename: reject reserved words and malformed identifiers. -->
+        <renameInputValidator
+            implementation="com.larena.boxbreaker.plugin.bbk.refactoring.BbkRenameInputValidator"/>
+
         <!-- Block C: stub element type holder + per-kind project-wide indexes. -->
         <stubElementTypeHolder
             class="com.larena.boxbreaker.plugin.bbk.stub.BbkStubElementTypes"

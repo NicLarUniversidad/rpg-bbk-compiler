@@ -20,7 +20,7 @@ DCL-PR localHelper(n INT(10) VALUE) -> INT(10);
 
 DCL-PROC runDemo EXPORT {
   // Use types declared in common-types.bbk
-  DCL-S currentCustomer LIKEDS(customer);
+  DCL-S customerOrder LIKEDS(customer);
   DCL-S currentOrder    LIKEDS(order);
   DCL-S shippingAddr    LIKEDS(addressTemplate);
 
@@ -32,22 +32,22 @@ DCL-PROC runDemo EXPORT {
   DCL-S valid  BOOL;
 
   // Populate the customer DS — Ctrl+B on each field should land in common-types.bbk
-  currentCustomer.id        = 100;
-  currentCustomer.firstName = "Alice";
-  currentCustomer.lastName  = "Smith";
-  currentCustomer.email     = "alice@example.com";
-  currentCustomer.isActive  = true;
+  customerOrder.id        = 100;
+  customerOrder.firstName = "Alice";
+  customerOrder.lastName  = "Smith";
+  customerOrder.email     = "alice@example.com";
+  customerOrder.isActive  = true;
 
   // Populate the order DS
   currentOrder.orderId    = 1;
-  currentOrder.customerId = currentCustomer.id;
+  currentOrder.customerId = customerOrder.id;
   currentOrder.total      = 199.95d;
   currentOrder.status     = "PENDING";
 
   // Cross-file procedure calls — Ctrl+B should jump to common-procs.bbk
-  valid = validateCustomer(currentCustomer);
+  valid = validateCustomer(customerOrder);
   if (valid) {
-    greetCustomer(currentCustomer);
+    greetCustomer(customerOrder);
     if (processOrder(currentOrder)) {
       print("Order " + char(currentOrder.orderId) + " ok");
     }
@@ -55,7 +55,7 @@ DCL-PROC runDemo EXPORT {
 
   // Loop using a cross-file constant
   for (i = 1; i <= MAX_RETRIES; i += 1) {
-    if (i == DEFAULT_PORT) {
+    if (i == DEFAULT_PORT0) {
       break;
     }
   }
